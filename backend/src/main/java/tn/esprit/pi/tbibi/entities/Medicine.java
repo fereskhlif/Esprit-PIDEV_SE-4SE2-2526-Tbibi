@@ -1,5 +1,6 @@
 package tn.esprit.pi.tbibi.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -27,6 +28,7 @@ public class Medicine {
     int stock;
     int minStockAlert;
     boolean available = true;
+    String activeIngredient;
 
 
     @ElementCollection
@@ -39,4 +41,11 @@ public class Medicine {
 
     @ManyToMany(mappedBy = "medicines")
     List<Prescription> prescriptions;  // Added back-reference
+
+    @ManyToOne
+    @JsonIgnore
+    Pharmacy pharmacy;
+
+    @Enumerated(EnumType.STRING) // saves as text in MySQL, not number
+    private MedicineForm form;
 }

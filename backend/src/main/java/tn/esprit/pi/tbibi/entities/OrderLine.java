@@ -23,9 +23,10 @@ public class OrderLine {
 
 
     @ManyToOne
+    @JoinColumn(name = "order_order_id")
     Order order;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "medicine_id")
     Medicine medicine;
 }

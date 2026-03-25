@@ -12,4 +12,6 @@ public interface MedicineRepository extends JpaRepository<Medicine,Long> {
     List<Medicine> findByDateOfExpirationBefore(Date date);
     List<Medicine> findByMedicineNameContaining(String name);
     List<Medicine> findByAvailableTrue();
+    List<Medicine> findByPharmacy_PharmacyIdAndAvailableTrue(Long pharmacyId);
+
 }

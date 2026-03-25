@@ -4,24 +4,17 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import tn.esprit.pi.tbibi.entities.MedicineForm;
 
-import java.util.Date;
-
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class MedicineRequest {
+
+public class MedicineOcrResult {
     String medicineName;
-    Date dateOfExpiration;
-    float price;
-    int stock;
-    int minStockAlert;
-    String description;
     String dosage;
-    Long pharmacyId;
+    String description;
     MedicineForm form;
-    String imageBase64;
     String activeIngredient;
 }

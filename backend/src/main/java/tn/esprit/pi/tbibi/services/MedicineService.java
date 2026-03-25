@@ -5,9 +5,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.pi.tbibi.DTO.medicine.MedicineRequest;
 import tn.esprit.pi.tbibi.DTO.medicine.MedicineResponse;
+import tn.esprit.pi.tbibi.entities.Pharmacy;
 import tn.esprit.pi.tbibi.mappers.MedicineMapper;
 import tn.esprit.pi.tbibi.entities.Medicine;
 import tn.esprit.pi.tbibi.repositories.MedicineRepository;
+import tn.esprit.pi.tbibi.repositories.PharmacyRepository;
 
 import java.util.Date;
 import java.util.List;
@@ -19,19 +21,31 @@ public class MedicineService implements IMedicineService {
     MedicineRepository medicineRepo;
     MedicineMapper medicineMapper;
     CloudinaryService cloudinaryService;
+    PharmacyRepository pharmacyRepo;
 
     @Override
     public MedicineResponse createMedicine(MedicineRequest request, List<MultipartFile> images) {
         Medicine medicine = medicineMapper.toEntity(request);
         medicine.setAvailable(true);
 
-        // upload all images
+        // ✅ link medicine to pharmacy
+        Pharmacy pharmacy = pharmacyRepo.findById(request.getPharmacyId()).orElseThrow();
+        medicine.setPharmacy(pharmacy);
+
         if (images != null && !images.isEmpty()) {
             List<String> imageUrls = cloudinaryService.uploadImages(images);
             medicine.setImageUrls(imageUrls);
         }
 
         return medicineMapper.toDto(medicineRepo.save(medicine));
+    }
+
+    @Override
+    public List<MedicineResponse> getMedicinesByPharmacy(Long pharmacyId) {
+        return medicineRepo.findByPharmacy_PharmacyIdAndAvailableTrue(pharmacyId)
+                .stream()
+                .map(medicineMapper::toDto)
+                .toList();
     }
 
     // add image to existing medicine

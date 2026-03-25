@@ -2,6 +2,8 @@ package tn.esprit.pi.tbibi.DTO.medicine;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import tn.esprit.pi.tbibi.entities.MedicineForm;
+
 import java.util.Date;
 import java.util.List;
 
@@ -22,4 +24,8 @@ public class MedicineResponse {
     List<String> imageUrls;
     String description;
     String dosage;
+    Long pharmacyId;
+    MedicineForm form;
+    String activeIngredient;
+
 }

@@ -17,4 +17,6 @@ public interface IMedicineService {
     List<MedicineResponse> searchByName(String name);
     MedicineResponse addImage(Long id, MultipartFile image); // ✅ added
     MedicineResponse removeImage(Long id, String imageUrl);
+    List<MedicineResponse> getMedicinesByPharmacy(Long pharmacyId);
+
 }

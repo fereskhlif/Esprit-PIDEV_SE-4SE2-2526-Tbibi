@@ -10,6 +10,7 @@ import java.util.Set;
 @Table(name = "users")
 @Getter
 @Setter
+@Builder
 @ToString(exclude = { "medicalFiles", "Orders", "Appointements" }) // Exclude collections
 @NoArgsConstructor
 @AllArgsConstructor
@@ -42,4 +43,12 @@ public class User {
     @OneToOne
     @JoinColumn(name = "pharmacy_id")
     Pharmacy pharmacy;
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "author")
+    @JsonIgnore
+    private List<Post> posts;
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "author")
+    @JsonIgnore
+    private List<Comment> comments;
 }

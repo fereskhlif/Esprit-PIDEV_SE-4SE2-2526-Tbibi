@@ -35,7 +35,7 @@ public class PasswordResetService {
 
     private Bucket getBucket(String email) {
         return buckets.computeIfAbsent(email, k -> Bucket.builder()
-                .addLimit(Bandwidth.simple(3, Duration.ofHours(1)))
+                .addLimit(Bandwidth.simple(10, Duration.ofHours(1)))
                 .build());
     }
 

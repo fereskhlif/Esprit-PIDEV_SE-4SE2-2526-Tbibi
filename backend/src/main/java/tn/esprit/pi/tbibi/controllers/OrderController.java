@@ -21,6 +21,17 @@ public class OrderController {
         return orderService.createOrder(request);
     }
 
+    @GetMapping("/pharmacy/{pharmacyId}")  // ✅ added - before /{id}
+
+    public List<OrderResponse> getOrdersByPharmacy(@PathVariable("pharmacyId") Long pharmacyId) {
+        return orderService.getOrdersByPharmacy(pharmacyId);
+    }
+
+    @GetMapping("/pending")
+    public List<OrderResponse> getPendingOrders() {
+        return orderService.getPendingOrders();
+    }
+
     @GetMapping("/{id}")
     public OrderResponse getOrderById(@PathVariable("id") Long id) {
         return orderService.getOrderById(id);
@@ -46,8 +57,5 @@ public class OrderController {
         return orderService.getOrdersByUser(userId);
     }
 
-    @GetMapping("/pending")
-    public List<OrderResponse> getPendingOrders() {
-        return orderService.getPendingOrders();
-    }
+
 }

@@ -16,6 +16,29 @@ public class CloudinaryService {
 
     Cloudinary cloudinary;
 
+    public String uploadForumMedia(MultipartFile file) {
+        try {
+            // detect if video or image
+            String resourceType = "auto"; // auto detects image or video
+            Map result = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", "tbibi/forum",
+                            "resource_type", resourceType
+                    )
+            );
+            return (String) result.get("secure_url");
+        } catch (IOException e) {
+            throw new RuntimeException("Media upload failed");
+        }
+    }
+
+    public List<String> uploadForumMediaFiles(List<MultipartFile> files) {
+        return files.stream()
+                .map(this::uploadForumMedia)
+                .toList();
+    }
+
     // upload one image
     public String uploadImage(MultipartFile file) {
         try {

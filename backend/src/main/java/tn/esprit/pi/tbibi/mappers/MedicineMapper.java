@@ -9,5 +9,6 @@ import tn.esprit.pi.tbibi.entities.Medicine;
 @Mapper(componentModel = "spring")
 public interface MedicineMapper {
     Medicine toEntity(MedicineRequest request);
+    @Mapping(source = "pharmacy.pharmacyId", target = "pharmacyId")
     MedicineResponse toDto(Medicine medicine);
 }

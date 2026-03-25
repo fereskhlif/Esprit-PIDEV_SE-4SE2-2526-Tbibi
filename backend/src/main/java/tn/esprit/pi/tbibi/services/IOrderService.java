@@ -13,5 +13,6 @@ public interface IOrderService {
     void deleteOrder(Long id);
     List<OrderResponse> getOrdersByUser(Integer userId);
     List<OrderResponse> getPendingOrders();
+    List<OrderResponse> getOrdersByPharmacy(Long pharmacyId);
 
 }

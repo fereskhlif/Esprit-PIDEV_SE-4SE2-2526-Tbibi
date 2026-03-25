@@ -24,6 +24,7 @@ public class Order {
     float totalAmount;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "order_status", length = 20)
     Status orderStatus;
     Date orderDate;
 
