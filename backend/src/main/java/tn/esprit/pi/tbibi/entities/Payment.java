@@ -2,7 +2,6 @@ package tn.esprit.pi.tbibi.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -11,27 +10,25 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long paymentId;
-    LocalDate paymentDate;
+    private Long paymentId;
+    private LocalDate paymentDate;
     @Enumerated(EnumType.STRING)
-    PaymentMethod paymentMethod;
+    private PaymentMethod paymentMethod;
 
     @ManyToOne
-    PaymentHistory paymenthistory;
+    private PaymentHistory paymenthistory;
 
 
 
 
     @ManyToOne
-    User user;
+    private User user;
 
 
 }

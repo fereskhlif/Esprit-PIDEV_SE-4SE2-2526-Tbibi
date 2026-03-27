@@ -1,0 +1,187 @@
+<section class="goals-page">
+  <article class="panel panel--hero goals-page__hero">
+    <div class="panel__header goals-page__hero-header">
+      <div class="panel__copy">
+        <p class="eyebrow">Care planning</p>
+        <h3>Structured health goals with a progress view that reads like a care brief</h3>
+        <p>
+          Create practical objectives, review the current balance between open and completed work, and keep every plan attached to the active patient record.
+        </p>
+      </div>
+
+      <div class="goals-page__hero-note" *ngIf="currentUser">
+        <span class="label-chip">Active patient</span>
+        <strong>{{ currentUser.name }}</strong>
+        <small>{{ currentUser.email }}</small>
+      </div>
+    </div>
+
+    <div class="goals-page__analytics" *ngIf="currentUser">
+      <article class="metric-card">
+        <span>Total goals</span>
+        <strong>{{ totalGoals }}</strong>
+        <small>Current plans tied to this patient</small>
+      </article>
+
+      <article class="metric-card">
+        <span>Completed</span>
+        <strong>{{ completedGoals }}</strong>
+        <small>Goals already achieved</small>
+      </article>
+
+      <article class="metric-card">
+        <span>Pending</span>
+        <strong>{{ pendingGoals }}</strong>
+        <small>Plans still in progress</small>
+      </article>
+
+      <article class="metric-card metric-card--dark goals-page__progress-card">
+        <span>Completion rate</span>
+        <strong>{{ totalGoals ? ((completedGoals / totalGoals) * 100 | number:'1.0-0') : 0 }}%</strong>
+        <div class="goals-page__progress-track" aria-hidden="true">
+          <span [style.width.%]="totalGoals ? (completedGoals / totalGoals) * 100 : 0"></span>
+        </div>
+        <small>{{ completedGoals }} of {{ totalGoals }} goals reached</small>
+      </article>
+    </div>
+
+    <div class="status-line status-line--success" *ngIf="statusMessage">{{ statusMessage }}</div>
+    <div class="status-line status-line--error" *ngIf="errorMessage">{{ errorMessage }}</div>
+  </article>
+
+  <div class="empty-panel" *ngIf="currentUser == null">
+    Select an active patient from the left rail before managing care goals.
+  </div>
+
+  <div class="goals-page__grid" *ngIf="currentUser">
+    <article class="panel goals-page__editor-panel">
+      <div class="panel__header goals-page__section-head">
+        <div class="goals-page__section-title">
+          <span class="icon-chip" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 5v14"></path>
+              <path d="M5 12h14"></path>
+            </svg>
+          </span>
+          <div>
+            <p class="eyebrow">Goal editor</p>
+            <h3>{{ editingGoalId ? 'Refine an existing goal' : 'Create a new care objective' }}</h3>
+            <p>{{ editingGoalId ? 'Adjust the plan details or update its completion state.' : 'Write a precise target that belongs to the selected patient record.' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="goals-page__fields">
+        <label class="field">
+          <span class="field__label">Goal title</span>
+          <input
+            name="goalTitle"
+            [(ngModel)]="goalForm.goalTitle"
+            (ngModelChange)="onGoalFieldChange('goalTitle')"
+            (blur)="markGoalFieldTouched('goalTitle')"
+            [class.input-error]="hasGoalFieldError('goalTitle')"
+            maxlength="120"
+            placeholder="Walk every morning"
+          >
+          <small class="field-hint">Use 3 to 120 characters.</small>
+          <small class="validation-text" *ngIf="hasGoalFieldError('goalTitle')">{{ getGoalFieldError('goalTitle') }}</small>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Description</span>
+          <textarea
+            name="goalDescription"
+            [(ngModel)]="goalForm.goalDescription"
+            (ngModelChange)="onGoalFieldChange('goalDescription')"
+            (blur)="markGoalFieldTouched('goalDescription')"
+            [class.input-error]="hasGoalFieldError('goalDescription')"
+            rows="4"
+            maxlength="500"
+            placeholder="Describe the target and the medical reason behind it."
+          ></textarea>
+          <div class="helper-row">
+            <small class="field-hint">Use 10 to 500 characters.</small>
+            <small class="char-counter">{{ descriptionLength }}/500</small>
+          </div>
+          <small class="validation-text" *ngIf="hasGoalFieldError('goalDescription')">{{ getGoalFieldError('goalDescription') }}</small>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Created date</span>
+          <input
+            name="createdDate"
+            type="date"
+            [(ngModel)]="goalForm.createdDate"
+            (ngModelChange)="onGoalFieldChange('createdDate')"
+            (blur)="markGoalFieldTouched('createdDate')"
+            [class.input-error]="hasGoalFieldError('createdDate')"
+            [max]="maxGoalDate"
+          >
+          <small class="field-hint">Future dates are not allowed.</small>
+          <small class="validation-text" *ngIf="hasGoalFieldError('createdDate')">{{ getGoalFieldError('createdDate') }}</small>
+        </label>
+
+        <label class="goals-page__toggle-row">
+          <input name="achieved" type="checkbox" [(ngModel)]="goalForm.achieved">
+          <span>Already achieved</span>
+        </label>
+      </div>
+
+      <div class="goals-page__editor-footer">
+        <p class="form-note">This objective remains linked to {{ currentUser.name }} and updates the review column immediately.</p>
+        <div class="goals-page__editor-actions">
+          <button type="button" class="button button--secondary" (click)="cancelEdit()" *ngIf="editingGoalId">Cancel</button>
+          <button type="button" class="button button--primary" (click)="saveGoal()" [disabled]="isSaving">
+            {{ isSaving ? 'Saving...' : (editingGoalId ? 'Update care goal' : 'Create care goal') }}
+          </button>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel goals-page__review-panel">
+      <div class="panel__header goals-page__section-head">
+        <div class="goals-page__section-title">
+          <span class="icon-chip" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+          </span>
+          <div>
+            <p class="eyebrow">Review column</p>
+            <h3>Current health goals</h3>
+            <p>Review progress, edit details, or update completion as the patient's follow-up changes.</p>
+          </div>
+        </div>
+
+        <span class="count-chip">{{ goals.length }} goals</span>
+      </div>
+
+      <div class="empty-panel" *ngIf="goals.length === 0">
+        No goals found for this patient yet. Use the editor to create the first care objective.
+      </div>
+
+      <div class="goals-page__list" *ngIf="goals.length > 0">
+        <article class="goals-page__item" *ngFor="let goal of goals" [class.goals-page__item--completed]="goal.achieved">
+          <div class="goals-page__item-head">
+            <div>
+              <h4>{{ goal.goalTitle }}</h4>
+              <small>Created on {{ goal.createdDate | date:'longDate' }}</small>
+            </div>
+            <span class="goals-page__status-tag">{{ goal.achieved ? 'Achieved' : 'In progress' }}</span>
+          </div>
+
+          <p class="goals-page__item-description">{{ goal.goalDescription }}</p>
+
+          <div class="goals-page__item-actions">
+            <button type="button" class="button button--secondary" (click)="toggleAchieved(goal)">
+              {{ goal.achieved ? 'Mark pending' : 'Mark done' }}
+            </button>
+            <button type="button" class="button button--secondary" (click)="editGoal(goal)">Edit</button>
+            <button type="button" class="button button--danger" (click)="deleteGoal(goal)">Delete</button>
+          </div>
+        </article>
+      </div>
+    </article>
+  </div>
+</section>

@@ -1,7 +1,6 @@
 package tn.esprit.pi.tbibi.entities;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
 
@@ -9,12 +8,10 @@ import java.time.LocalDate;
 @Table(name = "Appointement")
 @Getter
 @Setter
-@ToString
 @EqualsAndHashCode
 @NoArgsConstructor //
 @AllArgsConstructor
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Appointement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,8 +23,8 @@ public class Appointement {
     private StatusAppointement statusAppointement;
     private String service;
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    Schedule schedule;
+    private Schedule schedule;
     @ManyToOne
-    User user;
+    private User user;
 
 }

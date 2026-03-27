@@ -2,7 +2,6 @@ package tn.esprit.pi.tbibi.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.util.Date;
 import java.util.List;
@@ -11,23 +10,21 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-@ToString(exclude = {"orderLines", "prescriptions"})
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Medicine {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long medicineId;
-    String medicineName;
-    int quantity;
-    Date dateOfExpiration;
-    float price;
-    int stock;
+    private Long medicineId;
+    private String medicineName;
+    private int quantity;
+    private Date dateOfExpiration;
+    private float price;
+    private int stock;
 
     @OneToMany(mappedBy = "medicine", cascade = CascadeType.ALL)
-    List<OrderLine> orderLines;
+    private List<OrderLine> orderLines;
 
     @ManyToMany(mappedBy = "medicines")
-    List<Prescription> prescriptions;  // Added back-reference
+    private List<Prescription> prescriptions;  // Added back-reference
 }

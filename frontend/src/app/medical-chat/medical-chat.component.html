@@ -1,0 +1,255 @@
+<section class="chat-page">
+  <article class="panel panel--hero chat-page__hero">
+    <div class="panel__header chat-page__hero-header">
+      <div class="panel__copy">
+        <p class="eyebrow">Conversation room</p>
+        <h3>Private follow-up threads designed like a live case review</h3>
+        <p>
+          Search a participant, open the thread instantly, and now edit or remove only the messages you sent.
+        </p>
+      </div>
+
+      <div class="chat-page__hero-note" *ngIf="currentUser">
+        <span class="label-chip">Active sender</span>
+        <strong>{{ currentUser.name }}</strong>
+        <small>{{ currentUser.email }}</small>
+      </div>
+    </div>
+
+    <div class="chat-page__signal-strip" *ngIf="currentUser">
+      <article class="metric-card">
+        <span>Recent threads</span>
+        <strong>{{ conversations.length }}</strong>
+        <small>Available in the conversation rail</small>
+      </article>
+
+      <article class="metric-card">
+        <span>Open conversation</span>
+        <strong>{{ selectedUser?.name || 'Waiting for selection' }}</strong>
+        <small>{{ messages.length }} messages currently loaded</small>
+      </article>
+
+      <article class="metric-card metric-card--dark">
+        <span>Your controls</span>
+        <strong>Edit or delete your own notes without affecting messages from the other participant.</strong>
+        <small>Changes refresh the thread and the conversation summary automatically.</small>
+      </article>
+    </div>
+
+    <div class="status-line status-line--success" *ngIf="statusMessage">{{ statusMessage }}</div>
+    <div class="status-line status-line--error" *ngIf="errorMessage">{{ errorMessage }}</div>
+  </article>
+
+  <div class="empty-panel" *ngIf="currentUser == null">
+    Select an active patient from the navbar before opening the conversation room.
+  </div>
+
+  <div class="chat-page__grid" *ngIf="currentUser">
+    <aside class="panel chat-page__rail">
+      <section class="chat-page__search-box">
+        <div class="chat-page__section-head">
+          <p class="eyebrow">Open by email</p>
+          <h3>Find a participant</h3>
+        </div>
+
+        <label class="field">
+          <span class="field__label">Email address</span>
+          <input
+            name="searchEmail"
+            type="email"
+            inputmode="email"
+            [(ngModel)]="searchEmail"
+            (ngModelChange)="onSearchEmailChange()"
+            (blur)="markSearchTouched()"
+            [class.input-error]="hasSearchError()"
+            maxlength="120"
+            autocomplete="off"
+            placeholder="doctor@tbibi.tn"
+          >
+          <small class="field-hint">Search with a valid email address.</small>
+          <small class="validation-text" *ngIf="hasSearchError()">{{ searchError }}</small>
+        </label>
+
+        <button type="button" class="button button--primary chat-page__search-button" (click)="searchUser()">Open conversation</button>
+      </section>
+
+      <section class="chat-page__stack-block">
+        <div class="chat-page__block-head">
+          <div>
+            <p class="eyebrow">Thread list</p>
+            <h3>Recent conversations</h3>
+          </div>
+          <span class="count-chip">{{ conversations.length }}</span>
+        </div>
+
+        <div class="empty-panel chat-page__empty-block" *ngIf="conversations.length === 0">
+          No thread history yet. Start from a contact or open a user by email.
+        </div>
+
+        <button
+          type="button"
+          class="chat-page__thread-card"
+          *ngFor="let conversation of conversations"
+          (click)="openConversation(toUser(conversation))"
+          [class.chat-page__thread-card--active]="selectedUser?.userId === conversation.userId"
+        >
+          <div class="chat-page__thread-head">
+            <strong>{{ conversation.name }}</strong>
+            <small>{{ conversation.lastMessageAt | date:'shortTime' }}</small>
+          </div>
+          <span>{{ conversation.email }}</span>
+          <p>{{ conversation.lastMessage }}</p>
+        </button>
+      </section>
+
+      <section class="chat-page__stack-block">
+        <div class="chat-page__block-head">
+          <div>
+            <p class="eyebrow">Quick contacts</p>
+            <h3>Available participants</h3>
+          </div>
+          <span class="count-chip">{{ otherUsers.length }}</span>
+        </div>
+
+        <div class="chat-page__contacts">
+          <button
+            type="button"
+            class="chat-page__contact-chip"
+            *ngFor="let user of otherUsers"
+            (click)="openConversation(user)"
+            [class.chat-page__contact-chip--active]="selectedUser?.userId === user.userId"
+          >
+            <span class="chat-page__contact-avatar">{{ user.name | slice:0:1 }}</span>
+            <span>{{ user.name }}</span>
+          </button>
+        </div>
+      </section>
+    </aside>
+
+    <article class="panel chat-page__stage">
+      <div class="chat-page__stage-head" *ngIf="selectedUser">
+        <div>
+          <p class="eyebrow">Open thread</p>
+          <h3>{{ selectedUser.name }}</h3>
+          <p>{{ selectedUser.email }} - {{ selectedUser.adresse }}</p>
+        </div>
+
+        <span class="label-chip">{{ currentUser.name }} is sending</span>
+      </div>
+
+      <div class="empty-panel chat-page__stage-empty" *ngIf="selectedUser == null">
+        Choose a contact or search by email to open a conversation thread.
+      </div>
+
+      <div class="chat-page__stage-body" *ngIf="selectedUser">
+        <div class="empty-panel chat-page__empty-block" *ngIf="loadingMessages">Loading conversation...</div>
+
+        <div class="chat-page__timeline" *ngIf="loadingMessages === false">
+          <div class="empty-panel chat-page__empty-block" *ngIf="messages.length === 0">
+            No messages yet. Write the first follow-up note below.
+          </div>
+
+          <div class="chat-page__message-row" *ngFor="let message of messages" [class.chat-page__message-row--mine]="isMine(message)">
+            <div class="chat-page__message-bubble">
+              <div class="chat-page__message-topline">
+                <strong>{{ isMine(message) ? 'You' : (selectedUser.name || 'User') }}</strong>
+
+                <div class="chat-page__message-actions" *ngIf="isMine(message)">
+                  <button
+                    type="button"
+                    class="chat-page__message-action"
+                    *ngIf="isEditing(message) === false"
+                    [disabled]="isMessageBusy(message)"
+                    (click)="startEditing(message)"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    class="chat-page__message-action chat-page__message-action--danger"
+                    [disabled]="isMessageBusy(message)"
+                    (click)="deleteMessage(message)"
+                  >
+                    {{ deletingMessageId === message.id ? 'Deleting...' : 'Delete' }}
+                  </button>
+                </div>
+              </div>
+
+              <ng-container *ngIf="isEditing(message); else readOnlyMessage">
+                <div class="chat-page__message-editor">
+                  <label class="field">
+                    <span class="field__label">Edit message</span>
+                    <textarea
+                      [name]="'editMessage' + message.id"
+                      [(ngModel)]="editingMessageValue"
+                      (ngModelChange)="onEditMessageChange()"
+                      (blur)="markEditMessageTouched()"
+                      [class.input-error]="hasEditMessageError()"
+                      rows="3"
+                      maxlength="1000"
+                      placeholder="Update your follow-up note..."
+                    ></textarea>
+                    <div class="helper-row">
+                      <small class="field-hint">Use 2 to 1000 characters.</small>
+                      <small class="char-counter">{{ editMessageLength }}/1000</small>
+                    </div>
+                    <small class="validation-text" *ngIf="hasEditMessageError()">{{ editingMessageError }}</small>
+                  </label>
+
+                  <div class="chat-page__editor-actions">
+                    <button type="button" class="button button--ghost" (click)="cancelEditing()">Cancel</button>
+                    <button
+                      type="button"
+                      class="button button--primary"
+                      [disabled]="canSaveEditedMessage() === false"
+                      (click)="saveEditedMessage(message)"
+                    >
+                      {{ savingMessageId === message.id ? 'Saving...' : 'Save changes' }}
+                    </button>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-template #readOnlyMessage>
+                <p>{{ message.message }}</p>
+              </ng-template>
+
+              <div class="chat-page__message-stamp">
+                <small>{{ message.createdAt | date:'medium' }}</small>
+                <small *ngIf="message.updatedAt">Edited {{ message.updatedAt | date:'short' }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-page__composer">
+          <label class="field">
+            <span class="field__label">Message</span>
+            <textarea
+              name="newMessage"
+              [(ngModel)]="newMessage"
+              (ngModelChange)="onMessageChange()"
+              (blur)="markMessageTouched()"
+              [class.input-error]="hasMessageError()"
+              rows="3"
+              maxlength="1000"
+              placeholder="Write a follow-up note, reminder, or care question..."
+            ></textarea>
+            <div class="helper-row">
+              <small class="field-hint">Use 2 to 1000 characters.</small>
+              <small class="char-counter">{{ messageLength }}/1000</small>
+            </div>
+            <small class="validation-text" *ngIf="hasMessageError()">{{ messageError }}</small>
+          </label>
+
+          <div class="chat-page__composer-footer">
+            <p>Messages stay inside the shared care conversation for the selected patient context.</p>
+            <button type="button" class="button button--primary" (click)="sendMessage()" [disabled]="canSendMessage === false">
+              {{ isSending ? 'Sending...' : 'Send message' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>

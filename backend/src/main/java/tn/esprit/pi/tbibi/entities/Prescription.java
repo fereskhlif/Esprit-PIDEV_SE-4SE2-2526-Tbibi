@@ -11,7 +11,6 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-@ToString(exclude = {"medicines", "Treatments", "acte"})
 @NoArgsConstructor
 @AllArgsConstructor
 public class Prescription {

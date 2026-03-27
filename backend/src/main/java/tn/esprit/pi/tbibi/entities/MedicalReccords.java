@@ -6,7 +6,6 @@ import java.util.Set;
 @Entity
 @Getter
 @Setter
-@ToString
 @NoArgsConstructor
 public class MedicalReccords {
     @Id

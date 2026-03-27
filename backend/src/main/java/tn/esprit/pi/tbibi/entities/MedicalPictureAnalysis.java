@@ -9,7 +9,6 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
 public class MedicalPictureAnalysis {
 
     @Id
@@ -25,7 +24,6 @@ public class MedicalPictureAnalysis {
     // ========================================
     @OneToOne
     @JoinColumn(name = "lab_id", unique = true)
-    @ToString.Exclude
     private Laboratory_Result laboratoryResult;
 
 }

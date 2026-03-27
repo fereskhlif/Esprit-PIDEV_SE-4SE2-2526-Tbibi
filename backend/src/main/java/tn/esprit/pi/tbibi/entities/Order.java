@@ -2,7 +2,6 @@ package tn.esprit.pi.tbibi.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.util.Date;
 import java.util.List;
@@ -13,19 +12,17 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"orderLines", "pharmacy", "user"})  // Exclude relationships
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "orders")
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long orderId;
-    Date deliveryDate;
-    float totalAmount;
+    private Long orderId;
+    private Date deliveryDate;
+    private float totalAmount;
 
     @Enumerated(EnumType.STRING)
-    Status orderStatus;
-    Date orderDate;
+    private Status orderStatus;
+    private Date orderDate;
 
     @ManyToMany
     @JoinTable(
@@ -33,11 +30,11 @@ public class Order {
             joinColumns = @JoinColumn(name = "order_id"),
             inverseJoinColumns = @JoinColumn(name = "orderline_id")
     )
-    List<OrderLine> orderLines;
+    private List<OrderLine> orderLines;
 
     @ManyToOne
-    Pharmacy pharmacy;
+    private Pharmacy pharmacy;
 
     @ManyToOne
-    User user;
+    private User user;
 }

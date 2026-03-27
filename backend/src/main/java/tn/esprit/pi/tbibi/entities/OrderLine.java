@@ -2,7 +2,6 @@ package tn.esprit.pi.tbibi.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
@@ -12,19 +11,17 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"orders", "medicine"})  // Exclude relationships
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderLine {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long lineId;
-    int quantity;
-    float unitPrice;
+    private Long lineId;
+    private int quantity;
+    private float unitPrice;
 
     @ManyToMany(mappedBy = "orderLines")
-    List<Order> orders;
+    private List<Order> orders;
 
     @ManyToOne
     @JoinColumn(name = "medicine_id")
-    Medicine medicine;
+    private Medicine medicine;
 }

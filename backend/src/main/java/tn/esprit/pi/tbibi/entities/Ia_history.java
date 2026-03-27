@@ -2,7 +2,6 @@ package tn.esprit.pi.tbibi.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.util.Set;
 
@@ -10,12 +9,10 @@ import java.util.Set;
 @Table(name = "Appointement")
 @Getter
 @Setter
-@ToString
 @EqualsAndHashCode
 @NoArgsConstructor //
 @AllArgsConstructor
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Ia_history {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

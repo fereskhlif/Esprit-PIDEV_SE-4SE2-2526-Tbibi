@@ -2,7 +2,6 @@ package tn.esprit.pi.tbibi.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.util.Set;
 
@@ -10,16 +9,14 @@ import java.util.Set;
 @Getter
 @Setter
 @Builder
-@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 
-@FieldDefaults(level = AccessLevel.PRIVATE)
-    public class PaymentHistory {
+public class PaymentHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long historyId;
-    double amount;
+    private Long historyId;
+    private double amount;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="paymenthistory")
     private Set<Payment> Payments;;

@@ -51,8 +51,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kB",
-                  "maximumError": "4kB"
+                  "maximumWarning": "5kB",
+                  "maximumError": "7kB"
                 }
               ],
               "outputHashing": "all"
@@ -88,6 +88,8 @@
               "zone.js/testing"
             ],
             "tsConfig": "tsconfig.spec.json",
+            "karmaConfig": "karma.conf.js",
+            "sourceMap": false,
             "assets": [
               {
                 "glob": "**/*",

@@ -12,7 +12,6 @@ import java.time.LocalTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
 public class TherapySession {
 
     @Id

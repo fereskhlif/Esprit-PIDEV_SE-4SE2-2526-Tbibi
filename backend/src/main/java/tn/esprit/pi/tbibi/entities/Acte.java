@@ -6,7 +6,6 @@ import java.util.Date;
 @Entity
 @Getter
 @Setter
-@ToString
 @NoArgsConstructor
 public class Acte {
     @Id
@@ -15,9 +14,7 @@ public class Acte {
     private Date date;
     private String description;
     private String typeOfActe;
-    @ManyToOne(cascade = CascadeType.ALL)
-    MonitoringOfChronicDisease monitoringofchronicdisease;
-    ;
+
 
 
 }

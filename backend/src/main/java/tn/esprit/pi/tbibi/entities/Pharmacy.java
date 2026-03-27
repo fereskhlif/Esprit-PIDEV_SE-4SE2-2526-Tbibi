@@ -2,7 +2,6 @@ package tn.esprit.pi.tbibi.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
@@ -10,17 +9,15 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-@ToString(exclude = "orders")  // Exclude to prevent circular reference
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Pharmacy {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long pharmacyId;
-    String pharmacyName;
-    String pharmacyAddress;
+    private Long pharmacyId;
+    private String pharmacyName;
+    private String pharmacyAddress;
 
     @OneToMany(mappedBy = "pharmacy")
-    List<Order> orders;
+    private List<Order> orders;
 }

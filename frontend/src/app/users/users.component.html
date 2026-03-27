@@ -1,0 +1,188 @@
+<section class="users-page">
+  <article class="panel panel--hero users-page__hero">
+    <div class="panel__header users-page__hero-header">
+      <div class="panel__copy">
+        <p class="eyebrow">Patient registry</p>
+        <h3>Front-desk intake with one patient record carried across the whole workspace</h3>
+        <p>
+          Register a patient once, activate the profile, and let that same identity guide messages and care goals without duplicate entry.
+        </p>
+      </div>
+
+      <div class="users-page__hero-note">
+        <span class="label-chip">Live intake</span>
+        <strong>{{ currentUser?.name || 'No patient selected' }}</strong>
+        <small>{{ currentUser?.email || 'Select a record to continue the workflow.' }}</small>
+      </div>
+    </div>
+
+    <div class="users-page__signal-strip">
+      <article class="metric-card">
+        <span>Registered profiles</span>
+        <strong>{{ users.length }}</strong>
+        <small>Available for direct activation</small>
+      </article>
+
+      <article class="metric-card">
+        <span>Active patient</span>
+        <strong>{{ currentUser?.name || 'Waiting for selection' }}</strong>
+        <small>{{ currentUser?.adresse || 'Choose a profile from the registry list' }}</small>
+      </article>
+
+      <article class="metric-card metric-card--dark">
+        <span>Shared identity</span>
+        <strong>Chat and care goals always follow the selected profile.</strong>
+        <small>No extra lookup needed between modules.</small>
+      </article>
+    </div>
+
+    <div class="status-line status-line--success" *ngIf="statusMessage">{{ statusMessage }}</div>
+    <div class="status-line status-line--error" *ngIf="errorMessage">{{ errorMessage }}</div>
+  </article>
+
+  <div class="users-page__grid">
+    <article class="panel users-page__form-panel">
+      <div class="panel__header users-page__section-head">
+        <div class="users-page__section-title">
+          <span class="icon-chip" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 5v14"></path>
+              <path d="M5 12h14"></path>
+            </svg>
+          </span>
+          <div>
+            <p class="eyebrow">Registration</p>
+            <h3>Create a patient profile</h3>
+            <p>Every new patient becomes immediately available to the messaging and goal modules.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="users-page__fields">
+        <label class="field">
+          <span class="field__label">Full name</span>
+          <input
+            name="name"
+            [(ngModel)]="userForm.name"
+            (ngModelChange)="onUserFieldChange('name')"
+            (blur)="markUserFieldTouched('name')"
+            [class.input-error]="hasUserFieldError('name')"
+            maxlength="80"
+            autocomplete="name"
+            placeholder="Sarra Ben Ali"
+          >
+          <small class="field-hint">Use 2 to 80 characters.</small>
+          <small class="validation-text" *ngIf="hasUserFieldError('name')">{{ getUserFieldError('name') }}</small>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Email</span>
+          <input
+            name="email"
+            type="email"
+            inputmode="email"
+            [(ngModel)]="userForm.email"
+            (ngModelChange)="onUserFieldChange('email')"
+            (blur)="markUserFieldTouched('email')"
+            [class.input-error]="hasUserFieldError('email')"
+            maxlength="120"
+            autocomplete="email"
+            placeholder="sarra@tbibi.tn"
+          >
+          <small class="field-hint">Enter a valid email address.</small>
+          <small class="validation-text" *ngIf="hasUserFieldError('email')">{{ getUserFieldError('email') }}</small>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Password</span>
+          <input
+            name="password"
+            type="password"
+            [(ngModel)]="userForm.password"
+            (ngModelChange)="onUserFieldChange('password')"
+            (blur)="markUserFieldTouched('password')"
+            [class.input-error]="hasUserFieldError('password')"
+            maxlength="100"
+            autocomplete="new-password"
+            placeholder="Minimum 4 characters"
+          >
+          <small class="field-hint">Use at least 4 characters.</small>
+          <small class="validation-text" *ngIf="hasUserFieldError('password')">{{ getUserFieldError('password') }}</small>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Address</span>
+          <input
+            name="adresse"
+            [(ngModel)]="userForm.adresse"
+            (ngModelChange)="onUserFieldChange('adresse')"
+            (blur)="markUserFieldTouched('adresse')"
+            [class.input-error]="hasUserFieldError('adresse')"
+            maxlength="120"
+            autocomplete="street-address"
+            placeholder="Ariana, Tunisia"
+          >
+          <small class="field-hint">Use 4 to 120 characters.</small>
+          <small class="validation-text" *ngIf="hasUserFieldError('adresse')">{{ getUserFieldError('adresse') }}</small>
+        </label>
+      </div>
+
+      <div class="users-page__form-footer">
+        <p class="form-note">Create the profile once, then continue directly into conversation and goal planning.</p>
+        <button type="button" class="button button--primary users-page__submit" (click)="createUser()" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Creating patient...' : 'Create patient profile' }}
+        </button>
+      </div>
+    </article>
+
+    <article class="panel users-page__directory-panel">
+      <div class="panel__header users-page__section-head">
+        <div class="users-page__section-title">
+          <span class="icon-chip" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 6h16"></path>
+              <path d="M4 12h16"></path>
+              <path d="M4 18h16"></path>
+            </svg>
+          </span>
+          <div>
+            <p class="eyebrow">Registry atlas</p>
+            <h3>Choose the active patient record</h3>
+            <p>Activation is immediate. The selected record becomes the identity used in chat and goals.</p>
+          </div>
+        </div>
+
+        <span class="count-chip">{{ users.length }} profiles</span>
+      </div>
+
+      <div class="empty-panel" *ngIf="users.length === 0">
+        No patient profiles found yet. Use the registration panel to create the first record.
+      </div>
+
+      <div class="users-page__directory-list" *ngIf="users.length > 0">
+        <button
+          type="button"
+          class="users-page__card"
+          *ngFor="let user of users"
+          (click)="activateUser(user)"
+          [class.users-page__card--active]="currentUser?.userId === user.userId"
+        >
+          <div class="users-page__card-main">
+            <span class="users-page__card-avatar">{{ user.name | slice:0:1 }}</span>
+
+            <div class="users-page__card-copy">
+              <strong>{{ user.name }}</strong>
+              <span>{{ user.email }}</span>
+              <small>{{ user.adresse }}</small>
+            </div>
+          </div>
+
+          <div class="users-page__card-meta">
+            <span class="users-page__card-tag">{{ currentUser?.userId === user.userId ? 'Active record' : 'Activate profile' }}</span>
+            <small>Used in chat and care goals</small>
+          </div>
+        </button>
+      </div>
+    </article>
+  </div>
+</section>

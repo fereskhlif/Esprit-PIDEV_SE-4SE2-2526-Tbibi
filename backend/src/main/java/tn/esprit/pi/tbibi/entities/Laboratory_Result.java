@@ -12,7 +12,6 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
 public class Laboratory_Result {
 
     @Id
