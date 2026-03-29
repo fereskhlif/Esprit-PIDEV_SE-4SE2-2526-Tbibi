@@ -1,5 +1,7 @@
 package tn.esprit.pi.tbibi.services;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.pi.tbibi.DTO.medicine.MedicineRequest;
 import tn.esprit.pi.tbibi.DTO.medicine.MedicineResponse;
@@ -19,4 +21,8 @@ public interface IMedicineService {
     MedicineResponse removeImage(Long id, String imageUrl);
     List<MedicineResponse> getMedicinesByPharmacy(Long pharmacyId);
 
+    // ─── PAGINATED ───
+    Page<MedicineResponse> getAllMedicinesPaginated(Pageable pageable);
+    Page<MedicineResponse> getMedicinesByPharmacyPaginated(Long pharmacyId, Pageable pageable);
+    Page<MedicineResponse> searchMedicinesPaginated(String name, Long pharmacyId, Pageable pageable);
 }

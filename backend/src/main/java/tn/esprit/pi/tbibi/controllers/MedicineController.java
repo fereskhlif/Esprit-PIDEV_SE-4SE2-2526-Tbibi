@@ -1,6 +1,11 @@
 package tn.esprit.pi.tbibi.controllers;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,7 +25,7 @@ public class MedicineController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public MedicineResponse create(
-            @RequestPart("medicine") MedicineRequest request,
+            @RequestPart("medicine") @Valid MedicineRequest request,
             @RequestPart(value = "images", required = true) List<MultipartFile> images) {
         return medicineService.createMedicine(request, images);
     }
@@ -35,13 +40,51 @@ public class MedicineController {
         return medicineService.getAllMedicines();
     }
 
+    @GetMapping("/paginated")
+    public Page<MedicineResponse> getAllPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(defaultValue = "medicineName,asc") String[] sort) {
+        
+        // Handle sorting
+        Sort.Direction direction = sort[1].equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Sort.Order order = new Sort.Order(direction, sort[0]);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(order));
+        
+        return medicineService.getAllMedicinesPaginated(pageable);
+    }
+
     @GetMapping("/pharmacy/{pharmacyId}")
     public List<MedicineResponse> getByPharmacy(@PathVariable("pharmacyId") Long pharmacyId) {
         return medicineService.getMedicinesByPharmacy(pharmacyId);
     }
 
+    @GetMapping("/pharmacy/{pharmacyId}/paginated")
+    public Page<MedicineResponse> getByPharmacyPaginated(
+            @PathVariable("pharmacyId") Long pharmacyId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("medicineName").ascending());
+        return medicineService.getMedicinesByPharmacyPaginated(pharmacyId, pageable);
+    }
+
+    @GetMapping("/search/paginated")
+    public Page<MedicineResponse> searchPaginated(
+            @RequestParam("name") String name,
+            @RequestParam(name = "pharmacyId", required = false) Long pharmacyId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(defaultValue = "medicineName,asc") String[] sort) {
+        
+        Sort.Direction direction = sort[1].equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Sort.Order order = new Sort.Order(direction, sort[0]);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(order));
+        
+        return medicineService.searchMedicinesPaginated(name, pharmacyId, pageable);
+    }
+
     @PutMapping("/{id}")
-    public MedicineResponse update(@PathVariable("id") Long id, @RequestBody MedicineRequest request) {
+    public MedicineResponse update(@PathVariable("id") Long id, @RequestBody @Valid MedicineRequest request) {
         return medicineService.updateMedicine(id, request);
     }
 

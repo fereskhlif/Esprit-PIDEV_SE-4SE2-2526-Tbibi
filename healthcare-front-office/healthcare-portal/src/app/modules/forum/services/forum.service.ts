@@ -8,7 +8,8 @@ import {
   VoteResponse,
   CreatePostRequest,
   CreateCommentRequest,
-  VoteRequest
+  VoteRequest,
+  Page
 } from '../models/forum.models';
 
 @Injectable({ providedIn: 'root' })
@@ -31,12 +32,41 @@ export class ForumService {
     return this.http.get<PostResponse[]>(`${this.apiUrl}/posts/category/${categoryId}`);
   }
 
+  getPostsByAuthor(authorId: number): Observable<PostResponse[]> {
+    return this.http.get<PostResponse[]>(`${this.apiUrl}/posts/author/${authorId}`);
+  }
+
   getPostById(id: number): Observable<PostResponse> {
     return this.http.get<PostResponse>(`${this.apiUrl}/posts/${id}`);
   }
 
   searchPosts(keyword: string): Observable<PostResponse[]> {
     return this.http.get<PostResponse[]>(`${this.apiUrl}/posts/search`, { params: { keyword } });
+  }
+
+  getPostsPaginated(page: number, size: number, status?: string, sortBy?: string): Observable<Page<PostResponse>> {
+    const params: any = { page, size };
+    if (status) params.status = status;
+    if (sortBy) params.sortBy = sortBy;
+    return this.http.get<Page<PostResponse>>(`${this.apiUrl}/posts/paginated`, { params });
+  }
+
+  getPostsByCategoryPaginated(categoryId: number, page: number, size: number, status?: string, sortBy?: string): Observable<Page<PostResponse>> {
+    const params: any = { page, size };
+    if (status) params.status = status;
+    if (sortBy) params.sortBy = sortBy;
+    return this.http.get<Page<PostResponse>>(`${this.apiUrl}/posts/category/${categoryId}/paginated`, { params });
+  }
+
+  searchPostsPaginated(keyword: string, page: number, size: number, status?: string, sortBy?: string): Observable<Page<PostResponse>> {
+    const params: any = { keyword, page, size };
+    if (status) params.status = status;
+    if (sortBy) params.sortBy = sortBy;
+    return this.http.get<Page<PostResponse>>(`${this.apiUrl}/posts/search/paginated`, { params });
+  }
+
+  getCategoryStats(categoryId: number): Observable<{ totalPosts: number, unansweredCount: number }> {
+    return this.http.get<{ totalPosts: number, unansweredCount: number }>(`${this.apiUrl}/posts/category/${categoryId}/stats`);
   }
 
   createPost(request: CreatePostRequest): Observable<PostResponse> {
@@ -81,6 +111,12 @@ export class ForumService {
     return this.http.delete<void>(`${this.apiUrl}/comments/${id}`);
   }
 
+  togglePinComment(commentId: number, userId: number): Observable<CommentResponse> {
+    return this.http.put<CommentResponse>(`${this.apiUrl}/comments/${commentId}/pin`, null, {
+      params: { userId: userId.toString() }
+    });
+  }
+
   // ─── Votes ───────────────────────────────────────────────────────────────────
   vote(request: VoteRequest): Observable<VoteResponse> {
     return this.http.post<VoteResponse>(`${this.apiUrl}/votes`, request);
@@ -96,5 +132,17 @@ export class ForumService {
 
   checkVote(userId: number, postId: number): Observable<boolean> {
     return this.http.get<boolean>(`${this.apiUrl}/votes/check`, { params: { userId, postId } });
+  }
+
+  voteComment(userId: number, commentId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/comments/votes`, { userId, commentId });
+  }
+
+  unvoteComment(userId: number, commentId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/comments/votes`, { params: { userId, commentId } });
+  }
+
+  getUserVotedComments(userId: number, postId: number): Observable<number[]> {
+    return this.http.get<number[]>(`${this.apiUrl}/posts/${postId}/voted-comments`, { params: { userId } });
   }
 }

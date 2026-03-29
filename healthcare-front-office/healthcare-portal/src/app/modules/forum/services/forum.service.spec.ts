@@ -90,6 +90,9 @@ describe('ForumService', () => {
             authorName: 'Dr. Smith',
             postId: 1,
             parentCommentId: null,
+            isPinned: false,
+            voteCount: 0,
+            userHasVoted: false,
             replies: []
         },
         {
@@ -102,6 +105,9 @@ describe('ForumService', () => {
             authorName: 'Dr. Johnson',
             postId: 1,
             parentCommentId: null,
+            isPinned: false,
+            voteCount: 0,
+            userHasVoted: false,
             replies: [
                 {
                     commentId: 3,
@@ -113,6 +119,9 @@ describe('ForumService', () => {
                     authorName: 'John Doe',
                     postId: 1,
                     parentCommentId: 2,
+                    isPinned: false,
+                    voteCount: 0,
+                    userHasVoted: false,
                     replies: []
                 }
             ]
@@ -357,7 +366,7 @@ describe('ForumService', () => {
             service.getCommentsByPost(postId).subscribe(comments => {
                 expect(comments.length).toBe(2);
                 expect(comments[0].comment).toBe('Great question!');
-                expect(comments[1].replies.length).toBe(1);
+                expect(comments[1].replies!.length).toBe(1);
             });
 
             const req = httpMock.expectOne(`${apiUrl}/comments/post/${postId}`);
@@ -383,6 +392,9 @@ describe('ForumService', () => {
                 authorName: 'John Doe',
                 postId: 1,
                 parentCommentId: null,
+                isPinned: false,
+                voteCount: 0,
+                userHasVoted: false,
                 replies: []
             };
 
@@ -415,6 +427,9 @@ describe('ForumService', () => {
                 authorName: 'John Doe',
                 postId: 1,
                 parentCommentId: 2,
+                isPinned: false,
+                voteCount: 0,
+                userHasVoted: false,
                 replies: []
             };
 

@@ -18,6 +18,7 @@ import { ForumHomeComponent } from './pages/forum-home/forum-home.component';
 import { ForumCategoryComponent } from './pages/forum-category/forum-category.component';
 import { ForumPostComponent } from './pages/forum-post/forum-post.component';
 import { ForumNewPostComponent } from './pages/forum-new-post/forum-new-post.component';
+import { ForumMyPostsComponent } from './pages/forum-my-posts/forum-my-posts.component';
 import { SharedModule } from '../../shared/shared.module';
 import { CommentItemComponent } from './components/comment-item/comment-item/comment-item.component';
 
@@ -28,6 +29,7 @@ import { CommentItemComponent } from './components/comment-item/comment-item/com
     ForumCategoryComponent,
     ForumPostComponent,
     ForumNewPostComponent,
+    ForumMyPostsComponent,
     CommentItemComponent
   ],
   imports: [

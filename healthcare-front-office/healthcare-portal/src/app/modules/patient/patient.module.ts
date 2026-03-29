@@ -17,6 +17,7 @@ import { PaymentComponent } from './pages/payment/payment.component';
 import { InteractionHistoryComponent } from './pages/interaction-history/interaction-history.component';
 import { ProductDetailsComponent } from './pages/pharmacy-shop/product-details/product-details.component';
 import { MedicineCatalogComponent } from './pages/medicine-catalog/medicine-catalog.component';
+import { MedicineDetailsComponent } from './pages/medicine-details/medicine-details.component';
 import { MyOrdersComponent } from './pages/my-orders/my-orders.component';
 import { PharmacyListComponent } from './pages/pharmacy-list/pharmacy-list.component';
 
@@ -47,6 +48,9 @@ import {
     Truck,
     Filter,
     ArrowUpDown,
+    ArrowLeft,
+    Info,
+    Calendar
 } from 'lucide-angular';
 import { CartPageComponent } from './pages/cart-page/cart-page.component';
 import { CheckoutPageComponent } from './pages/checkout-page/checkout-page.component';
@@ -64,6 +68,7 @@ import { OrderSuccessComponent } from './pages/order-success/order-success.compo
         PharmacyShopComponent,
         ProductDetailsComponent,
         MedicineCatalogComponent,
+        MedicineDetailsComponent,
         MyOrdersComponent,
         PharmacyListComponent,
         LabResultsComponent,
@@ -105,6 +110,9 @@ import { OrderSuccessComponent } from './pages/order-success/order-success.compo
             Truck,
             Filter,
             ArrowUpDown,
+            ArrowLeft,
+            Info,
+            Calendar
         })
     ]
 })

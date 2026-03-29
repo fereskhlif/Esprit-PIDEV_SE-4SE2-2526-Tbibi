@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.pi.tbibi.DTO.category.CategoryRequest;
 import tn.esprit.pi.tbibi.DTO.category.CategoryResponse;
@@ -49,6 +50,12 @@ class ForumServiceTest {
     private VoteMapper voteMapper;
     @Mock
     private CloudinaryService cloudinaryService;
+    @Mock
+    private SimpMessagingTemplate messagingTemplate;
+    @Mock
+    private CommentVoteRepository commentVoteRepo;
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private ForumService forumService;
@@ -268,8 +275,6 @@ class ForumServiceTest {
         when(categoryRepo.findById(1L)).thenReturn(Optional.of(testCategory));
         when(postRepo.save(any(Post.class))).thenReturn(testPost);
         when(postMapper.toDto(any(Post.class))).thenReturn(expectedResponse);
-        when(commentRepo.countByPostAndDeletedFalse(any(Post.class))).thenReturn(0L);
-        when(voteRepo.countByPost(any(Post.class))).thenReturn(0L);
 
         // WHEN
         PostResponse result = forumService.createPost(request);
@@ -334,8 +339,6 @@ class ForumServiceTest {
         when(postRepo.findById(postId)).thenReturn(Optional.of(testPost));
         when(postRepo.save(any(Post.class))).thenReturn(testPost);
         when(postMapper.toDto(any(Post.class))).thenReturn(expectedResponse);
-        when(commentRepo.countByPostAndDeletedFalse(any(Post.class))).thenReturn(0L);
-        when(voteRepo.countByPost(any(Post.class))).thenReturn(0L);
 
         // WHEN
         PostResponse result = forumService.getPostById(postId);
@@ -374,8 +377,6 @@ class ForumServiceTest {
 
         when(postRepo.findByDeletedFalseOrderByPinnedDescCreatedDateDesc()).thenReturn(posts);
         when(postMapper.toDto(any(Post.class))).thenReturn(postResponse);
-        when(commentRepo.countByPostAndDeletedFalse(any(Post.class))).thenReturn(0L);
-        when(voteRepo.countByPost(any(Post.class))).thenReturn(0L);
 
         // WHEN
         List<PostResponse> result = forumService.getAllPosts();
@@ -397,8 +398,6 @@ class ForumServiceTest {
         when(postRepo.findByCategoryAndDeletedFalseOrderByPinnedDescCreatedDateDesc(testCategory))
                 .thenReturn(posts);
         when(postMapper.toDto(any(Post.class))).thenReturn(postResponse);
-        when(commentRepo.countByPostAndDeletedFalse(any(Post.class))).thenReturn(0L);
-        when(voteRepo.countByPost(any(Post.class))).thenReturn(0L);
 
         // WHEN
         List<PostResponse> result = forumService.getPostsByCategory(categoryId);
@@ -419,8 +418,6 @@ class ForumServiceTest {
         when(userRepo.findById(authorId)).thenReturn(Optional.of(testUser));
         when(postRepo.findByAuthorAndDeletedFalse(testUser)).thenReturn(posts);
         when(postMapper.toDto(any(Post.class))).thenReturn(postResponse);
-        when(commentRepo.countByPostAndDeletedFalse(any(Post.class))).thenReturn(0L);
-        when(voteRepo.countByPost(any(Post.class))).thenReturn(0L);
 
         // WHEN
         List<PostResponse> result = forumService.getPostsByAuthor(authorId);
@@ -440,8 +437,6 @@ class ForumServiceTest {
 
         when(postRepo.findByTitleContainingIgnoreCaseAndDeletedFalse(keyword)).thenReturn(posts);
         when(postMapper.toDto(any(Post.class))).thenReturn(postResponse);
-        when(commentRepo.countByPostAndDeletedFalse(any(Post.class))).thenReturn(0L);
-        when(voteRepo.countByPost(any(Post.class))).thenReturn(0L);
 
         // WHEN
         List<PostResponse> result = forumService.searchPosts(keyword);
@@ -470,8 +465,6 @@ class ForumServiceTest {
         when(postRepo.findById(postId)).thenReturn(Optional.of(testPost));
         when(postRepo.save(any(Post.class))).thenReturn(testPost);
         when(postMapper.toDto(any(Post.class))).thenReturn(expectedResponse);
-        when(commentRepo.countByPostAndDeletedFalse(any(Post.class))).thenReturn(0L);
-        when(voteRepo.countByPost(any(Post.class))).thenReturn(0L);
 
         // WHEN
         PostResponse result = forumService.updatePost(postId, request);
@@ -495,8 +488,6 @@ class ForumServiceTest {
         when(postRepo.findById(postId)).thenReturn(Optional.of(testPost));
         when(postRepo.save(any(Post.class))).thenReturn(testPost);
         when(postMapper.toDto(any(Post.class))).thenReturn(expectedResponse);
-        when(commentRepo.countByPostAndDeletedFalse(any(Post.class))).thenReturn(0L);
-        when(voteRepo.countByPost(any(Post.class))).thenReturn(0L);
 
         // WHEN
         PostResponse result = forumService.updatePostStatus(postId, status);
@@ -521,8 +512,6 @@ class ForumServiceTest {
         when(postRepo.findById(postId)).thenReturn(Optional.of(testPost));
         when(postRepo.save(any(Post.class))).thenReturn(testPost);
         when(postMapper.toDto(any(Post.class))).thenReturn(expectedResponse);
-        when(commentRepo.countByPostAndDeletedFalse(any(Post.class))).thenReturn(0L);
-        when(voteRepo.countByPost(any(Post.class))).thenReturn(0L);
 
         // WHEN
         PostResponse result = forumService.togglePin(postId);
@@ -541,8 +530,6 @@ class ForumServiceTest {
         when(postRepo.findById(postId)).thenReturn(Optional.of(testPost));
         when(postRepo.save(any(Post.class))).thenReturn(testPost);
         when(postMapper.toDto(any(Post.class))).thenReturn(PostResponse.builder().build());
-        when(commentRepo.countByPostAndDeletedFalse(any(Post.class))).thenReturn(0L);
-        when(voteRepo.countByPost(any(Post.class))).thenReturn(0L);
 
         // WHEN
         forumService.togglePin(postId);
@@ -583,8 +570,6 @@ class ForumServiceTest {
         when(cloudinaryService.uploadForumMediaFiles(files)).thenReturn(uploadedUrls);
         when(postRepo.save(any(Post.class))).thenReturn(testPost);
         when(postMapper.toDto(any(Post.class))).thenReturn(expectedResponse);
-        when(commentRepo.countByPostAndDeletedFalse(any(Post.class))).thenReturn(0L);
-        when(voteRepo.countByPost(any(Post.class))).thenReturn(0L);
 
         // WHEN
         PostResponse result = forumService.uploadPostMedia(postId, files);
@@ -623,6 +608,7 @@ class ForumServiceTest {
         when(commentRepo.save(any(Comment.class))).thenReturn(testComment);
         when(commentMapper.toDto(any(Comment.class))).thenReturn(expectedResponse);
         when(commentRepo.findByParentCommentAndDeletedFalse(any())).thenReturn(new ArrayList<>());
+        when(commentVoteRepo.countByComment(any())).thenReturn(0L);
 
         // WHEN
         CommentResponse result = forumService.addComment(request);
@@ -661,6 +647,7 @@ class ForumServiceTest {
         when(commentRepo.save(any(Comment.class))).thenReturn(testComment);
         when(commentMapper.toDto(any(Comment.class))).thenReturn(expectedResponse);
         when(commentRepo.findByParentCommentAndDeletedFalse(any())).thenReturn(new ArrayList<>());
+        when(commentVoteRepo.countByComment(any())).thenReturn(0L);
 
         // WHEN
         CommentResponse result = forumService.addComment(request);
@@ -725,6 +712,7 @@ class ForumServiceTest {
                 .thenReturn(comments);
         when(commentMapper.toDto(any(Comment.class))).thenReturn(commentResponse);
         when(commentRepo.findByParentCommentAndDeletedFalse(any())).thenReturn(new ArrayList<>());
+        when(commentVoteRepo.countByComment(any())).thenReturn(0L);
 
         // WHEN
         List<CommentResponse> result = forumService.getCommentsByPost(postId);
@@ -749,6 +737,7 @@ class ForumServiceTest {
         when(commentRepo.save(any(Comment.class))).thenReturn(testComment);
         when(commentMapper.toDto(any(Comment.class))).thenReturn(expectedResponse);
         when(commentRepo.findByParentCommentAndDeletedFalse(any())).thenReturn(new ArrayList<>());
+        when(commentVoteRepo.countByComment(any())).thenReturn(0L);
 
         // WHEN
         CommentResponse result = forumService.updateComment(commentId, newComment);
@@ -797,6 +786,7 @@ class ForumServiceTest {
         when(voteRepo.existsByUserAndPost(testUser, testPost)).thenReturn(false); // Not voted yet
         when(voteRepo.save(any(Vote.class))).thenReturn(testVote);
         when(voteMapper.toDto(any(Vote.class))).thenReturn(expectedResponse);
+        when(voteRepo.countByPost(any())).thenReturn(1L);
 
         // WHEN
         VoteResponse result = forumService.votePost(request);
@@ -837,6 +827,7 @@ class ForumServiceTest {
         when(userRepo.findById(userId)).thenReturn(Optional.of(testUser));
         when(postRepo.findById(postId)).thenReturn(Optional.of(testPost));
         when(voteRepo.findByUserAndPost(testUser, testPost)).thenReturn(Optional.of(testVote));
+        when(voteRepo.countByPost(any())).thenReturn(0L);
 
         // WHEN
         forumService.unvotePost(userId, postId);

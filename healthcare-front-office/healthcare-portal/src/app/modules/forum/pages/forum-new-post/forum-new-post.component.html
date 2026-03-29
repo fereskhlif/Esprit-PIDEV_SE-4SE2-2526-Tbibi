@@ -15,20 +15,22 @@
     </div>
 
     <!-- Form Card -->
-    <div *ngIf="!loadingCategories" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div *ngIf="!loadingCategories" [formGroup]="postForm" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
       <!-- Category selector -->
       <div class="p-6 border-b border-gray-100">
         <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
           Post to
         </label>
-        <select [(ngModel)]="selectedCategoryId"
-          class="w-full max-w-xs bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 cursor-pointer">
+        <select formControlName="categoryId"
+          [class.border-red-300]="isInvalid('categoryId')"
+          class="w-full max-w-xs bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 cursor-pointer transition-all">
           <option [ngValue]="null">Select a category...</option>
           <option *ngFor="let cat of categories" [ngValue]="cat.categoryId">
             {{ cat.categoryName }}
           </option>
         </select>
+        <p *ngIf="hasError('categoryId', 'required')" class="text-[10px] text-red-500 font-bold mt-1 ml-1">Please select a category</p>
       </div>
 
       <!-- Tab Navigation -->
@@ -55,10 +57,15 @@
 
         <!-- Title -->
         <div>
-          <input [(ngModel)]="title" type="text" placeholder="An interesting title *" maxlength="300"
+          <input formControlName="title" type="text" placeholder="An interesting title *" maxlength="300"
+            [class.border-red-300]="isInvalid('title')"
             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-base font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all" />
-          <div class="flex justify-end mt-1">
-            <span class="text-xs text-gray-400">{{ title.length }}/300</span>
+          <div class="flex justify-between mt-1 px-1">
+            <div class="flex flex-col">
+              <span *ngIf="hasError('title', 'required')" class="text-[10px] text-red-500 font-bold">Title is required</span>
+              <span *ngIf="hasError('title', 'minlength')" class="text-[10px] text-red-500 font-bold">Title must be at least 5 characters</span>
+            </div>
+            <span class="text-xs text-gray-400">{{ postForm.get('title')?.value?.length || 0 }}/300</span>
           </div>
         </div>
 
@@ -122,10 +129,13 @@
               <lucide-icon name="eraser" [size]="18"></lucide-icon>
             </button>
           </div>
-          <textarea #contentInput [(ngModel)]="content" rows="6" placeholder="Body text (optional)"
+          <textarea #contentInput formControlName="content" rows="6" placeholder="Body text *"
+            [class.border-red-300]="isInvalid('content')"
             class="w-full px-4 py-3 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none resize-none">
           </textarea>
         </div>
+        <p *ngIf="hasError('content', 'required')" class="text-[10px] text-red-500 font-bold ml-1">Content is required</p>
+        <p *ngIf="hasError('content', 'minlength')" class="text-[10px] text-red-500 font-bold ml-1">Content must be at least 10 characters</p>
 
         <!-- Error -->
         <div *ngIf="formError"
@@ -139,10 +149,15 @@
 
         <!-- Title -->
         <div>
-          <input [(ngModel)]="title" type="text" placeholder="An interesting title *" maxlength="300"
+          <input formControlName="title" type="text" placeholder="An interesting title *" maxlength="300"
+            [class.border-red-300]="isInvalid('title')"
             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-base font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all" />
-          <div class="flex justify-end mt-1">
-            <span class="text-xs text-gray-400">{{ title.length }}/300</span>
+          <div class="flex justify-between mt-1 px-1">
+            <div class="flex flex-col">
+              <span *ngIf="hasError('title', 'required')" class="text-[10px] text-red-500 font-bold">Title is required</span>
+              <span *ngIf="hasError('title', 'minlength')" class="text-[10px] text-red-500 font-bold">Title must be at least 5 characters</span>
+            </div>
+            <span class="text-xs text-gray-400">{{ postForm.get('title')?.value?.length || 0 }}/300</span>
           </div>
         </div>
 
@@ -167,9 +182,12 @@
         </div>
 
         <!-- Body text -->
-        <textarea [(ngModel)]="content" rows="4" placeholder="Body text (optional)"
+        <textarea formControlName="content" rows="4" placeholder="Body text *"
+          [class.border-red-300]="isInvalid('content')"
           class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 resize-none transition-all">
         </textarea>
+        <p *ngIf="hasError('content', 'required')" class="text-[10px] text-red-500 font-bold ml-1">Content is required</p>
+        <p *ngIf="hasError('content', 'minlength')" class="text-[10px] text-red-500 font-bold ml-1">Content must be at least 10 characters</p>
 
         <!-- Error -->
         <div *ngIf="formError"
@@ -187,17 +205,25 @@
 
         <!-- Title -->
         <div>
-          <input [(ngModel)]="title" type="text" placeholder="An interesting title *" maxlength="300"
+          <input formControlName="title" type="text" placeholder="An interesting title *" maxlength="300"
+            [class.border-red-300]="isInvalid('title')"
             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-base font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all" />
-          <div class="flex justify-end mt-1">
-            <span class="text-xs text-gray-400">{{ title.length }}/300</span>
+          <div class="flex justify-between mt-1 px-1">
+            <div class="flex flex-col">
+              <span *ngIf="hasError('title', 'required')" class="text-[10px] text-red-500 font-bold">Title is required</span>
+              <span *ngIf="hasError('title', 'minlength')" class="text-[10px] text-red-500 font-bold">Title must be at least 5 characters</span>
+            </div>
+            <span class="text-xs text-gray-400">{{ postForm.get('title')?.value?.length || 0 }}/300</span>
           </div>
         </div>
 
         <!-- Body text -->
-        <textarea [(ngModel)]="content" rows="4" placeholder="Body text (optional)"
+        <textarea formControlName="content" rows="4" placeholder="Body text *"
+          [class.border-red-300]="isInvalid('content')"
           class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 resize-none transition-all">
         </textarea>
+        <p *ngIf="hasError('content', 'required')" class="text-[10px] text-red-500 font-bold ml-1">Content is required</p>
+        <p *ngIf="hasError('content', 'minlength')" class="text-[10px] text-red-500 font-bold ml-1">Content must be at least 10 characters</p>
 
         <p class="text-xs text-gray-400 italic">
           Link posts are for reference only in this healthcare forum.

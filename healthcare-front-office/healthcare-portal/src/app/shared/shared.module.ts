@@ -84,6 +84,7 @@ import {
     ListOrdered,
     Link,
     Bookmark,
+    SortAsc,
 } from 'lucide-angular';
 
 @NgModule({
@@ -107,7 +108,7 @@ import {
             // Forum Home
             MessageCircle, LayoutGrid, ArrowUp, HeartPulse, Heart, Sun, Leaf, Smile, ShieldAlert, Cpu, CirclePlus, FlaskConical, CornerDownRight,
             // Forum Post
-            ArrowLeft, Lock, ThumbsUp, Bold, Italic, Strikethrough, Type, Quote, Code, List, ListOrdered, Link, Bookmark,
+            ArrowLeft, Lock, ThumbsUp, Bold, Italic, Strikethrough, Type, Quote, Code, List, ListOrdered, Link, Bookmark, SortAsc,
         })
     ],
     exports: [

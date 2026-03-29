@@ -12,6 +12,7 @@ public interface CommentMapper {
 
 
     @Mapping(source = "deleted", target = "isDeleted")
+    @Mapping(source = "pinned", target = "isPinned")
     @Mapping(source = "author.userId", target = "authorId")
     @Mapping(source = "author.name", target = "authorName")
     @Mapping(source = "post.postId", target = "postId")

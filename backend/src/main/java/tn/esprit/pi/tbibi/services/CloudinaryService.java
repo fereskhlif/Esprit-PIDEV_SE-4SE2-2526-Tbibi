@@ -44,11 +44,16 @@ public class CloudinaryService {
         try {
             Map result = cloudinary.uploader().upload(
                     file.getBytes(),
-                    ObjectUtils.asMap("folder", "tbibi/medicines")
+                    ObjectUtils.asMap(
+                            "folder", "tbibi/medicines",
+                            "resource_type", "auto"
+                    )
             );
             return (String) result.get("secure_url");
         } catch (IOException e) {
-            throw new RuntimeException("Image upload failed");
+            throw new RuntimeException("Image upload failed: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Cloudinary error: " + e.getMessage());
         }
     }
 

@@ -1,6 +1,8 @@
 package tn.esprit.pi.tbibi.services;
 
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.pi.tbibi.DTO.medicine.MedicineRequest;
@@ -46,6 +48,28 @@ public class MedicineService implements IMedicineService {
                 .stream()
                 .map(medicineMapper::toDto)
                 .toList();
+    }
+
+    @Override
+    public Page<MedicineResponse> getAllMedicinesPaginated(Pageable pageable) {
+        return medicineRepo.findByAvailableTrue(pageable)
+                .map(medicineMapper::toDto);
+    }
+
+    @Override
+    public Page<MedicineResponse> getMedicinesByPharmacyPaginated(Long pharmacyId, Pageable pageable) {
+        return medicineRepo.findByPharmacy_PharmacyIdAndAvailableTrue(pharmacyId, pageable)
+                .map(medicineMapper::toDto);
+    }
+
+    @Override
+    public Page<MedicineResponse> searchMedicinesPaginated(String name, Long pharmacyId, Pageable pageable) {
+        if (pharmacyId != null) {
+            return medicineRepo.findByMedicineNameContainingIgnoreCaseAndPharmacy_PharmacyIdAndAvailableTrue(name, pharmacyId, pageable)
+                    .map(medicineMapper::toDto);
+        }
+        return medicineRepo.findByMedicineNameContainingIgnoreCaseAndAvailableTrue(name, pageable)
+                .map(medicineMapper::toDto);
     }
 
     // add image to existing medicine

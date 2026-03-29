@@ -16,11 +16,15 @@ public class CommentResponse {
     private LocalDateTime commentDate;
     private LocalDateTime updatedDate;
     Boolean isDeleted;
+    boolean isPinned;
     public Boolean getIsDeleted() { return isDeleted; }
+    public boolean getIsPinned() { return isPinned; }
 
     private Integer authorId;
     private String authorName;
     private Long postId;
     private Long parentCommentId;  // ← explicit private, no @FieldDefaults
     private List<CommentResponse> replies;
+    int voteCount;
+    boolean userHasVoted;
 }

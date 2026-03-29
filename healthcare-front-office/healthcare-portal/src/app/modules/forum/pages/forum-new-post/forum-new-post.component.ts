@@ -3,6 +3,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { ForumService } from '../../services/forum.service';
 import { CategoryResponse } from '../../models/forum.models';
 import { ViewChild, ElementRef } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-forum-new-post',
@@ -15,20 +16,31 @@ export class ForumNewPostComponent implements OnInit {
   categories: CategoryResponse[] = [];
   loadingCategories = true;
 
-  selectedCategoryId: number | null = null;
-  title = '';
-  content = '';
+  postForm!: FormGroup;
   submitting = false;
   formError = '';
-
   activeTab: 'text' | 'image' | 'link' = 'text';
-
   currentUserId = 1;
 
   selectedFiles: File[] = [];
   filePreviews: string[] = [];
 
-  constructor(private forumService: ForumService, private router: Router, private route: ActivatedRoute) { }
+  constructor(
+    private forumService: ForumService,
+    private router: Router,
+    private route: ActivatedRoute,
+    private fb: FormBuilder
+  ) {
+    this.initForm();
+  }
+
+  private initForm(): void {
+    this.postForm = this.fb.group({
+      categoryId: [null, Validators.required],
+      title: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
+      content: ['', [Validators.required, Validators.minLength(10)]]
+    });
+  }
 
   insertMarkdown(prefix: string, suffix: string, textareaElement?: HTMLTextAreaElement): void {
     // Prefer passed element, fallback to ViewChild, fallback to querySelector
@@ -37,12 +49,13 @@ export class ForumNewPostComponent implements OnInit {
     
     const start = textarea.selectionStart || 0;
     const end = textarea.selectionEnd || 0;
-    const text = this.content || '';
+    const text = this.postForm.get('content')?.value || '';
 
     const selectedText = text.substring(start, end);
     const replacement = prefix + selectedText + suffix;
 
-    this.content = text.substring(0, start) + replacement + text.substring(end);
+    const newValue = text.substring(0, start) + replacement + text.substring(end);
+    this.postForm.get('content')?.setValue(newValue);
 
     // Ensure we run the exact selection update after Angular syncs ngModel to DOM
     setTimeout(() => {
@@ -58,8 +71,8 @@ export class ForumNewPostComponent implements OnInit {
   }
 
   clearContent(): void {
-    if (this.content && confirm('Are you sure you want to clear the text?')) {
-      this.content = '';
+    if (this.postForm.get('content')?.value && confirm('Are you sure you want to clear the text?')) {
+      this.postForm.get('content')?.setValue('');
     }
   }
 
@@ -94,24 +107,20 @@ export class ForumNewPostComponent implements OnInit {
 
   submit(): void {
     this.formError = '';
-    if (!this.selectedCategoryId) {
-      this.formError = 'Please select a category.';
-      return;
-    }
-    if (!this.title.trim()) {
-      this.formError = 'Please enter a title.';
-      return;
-    }
-    if (!this.content.trim() && this.selectedFiles.length === 0) {
-      this.formError = 'Please enter post content or upload media.';
+    this.postForm.markAllAsTouched();
+
+    if (this.postForm.invalid) {
+      this.formError = 'Please correct the errors in the form.';
       return;
     }
 
+    const { title, content, categoryId } = this.postForm.value;
+
     this.submitting = true;
     this.forumService.createPost({
-      title: this.title.trim(),
-      content: this.content.trim(),
-      categoryId: this.selectedCategoryId,
+      title: title.trim(),
+      content: content.trim(),
+      categoryId: categoryId,
       authorId: this.currentUserId
     }).subscribe({
       next: (post) => {
@@ -136,6 +145,16 @@ export class ForumNewPostComponent implements OnInit {
         this.submitting = false;
       }
     });
+  }
+
+  hasError(controlName: string, errorName: string): boolean {
+    const control = this.postForm.get(controlName);
+    return !!(control && control.hasError(errorName) && control.touched);
+  }
+
+  isInvalid(controlName: string): boolean {
+    const control = this.postForm.get(controlName);
+    return !!(control && control.invalid && control.touched);
   }
 
   goBack(): void {

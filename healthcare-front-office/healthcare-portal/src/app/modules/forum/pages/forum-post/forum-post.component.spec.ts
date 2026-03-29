@@ -64,6 +64,9 @@ describe('ForumPostComponent', () => {
             authorName: 'Dr. Smith',
             postId: 1,
             parentCommentId: null,
+            isPinned: false,
+            voteCount: 0,
+            userHasVoted: false,
             replies: []
         },
         {
@@ -76,6 +79,9 @@ describe('ForumPostComponent', () => {
             authorName: 'Dr. Johnson',
             postId: 1,
             parentCommentId: null,
+            isPinned: false,
+            voteCount: 0,
+            userHasVoted: false,
             replies: [
                 {
                     commentId: 3,
@@ -87,6 +93,9 @@ describe('ForumPostComponent', () => {
                     authorName: 'John Doe',
                     postId: 1,
                     parentCommentId: 2,
+                    isPinned: false,
+                    voteCount: 0,
+                    userHasVoted: false,
                     replies: []
                 }
             ]
@@ -107,7 +116,8 @@ describe('ForumPostComponent', () => {
             'vote',
             'unvote',
             'createComment',
-            'updatePostStatus'
+            'updatePostStatus',
+            'getUserVotedComments'
         ]);
         routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
@@ -131,6 +141,7 @@ describe('ForumPostComponent', () => {
 
         forumServiceSpy.getPostById.and.returnValue(of(mockPost));
         forumServiceSpy.getCommentsByPost.and.returnValue(of(mockComments));
+        forumServiceSpy.getUserVotedComments.and.returnValue(of([]));
         forumServiceSpy.checkVote.and.returnValue(of(false));
         forumServiceSpy.vote.and.returnValue(of({ voteId: 1, userId: 2, userName: 'Dr. Smith', postId: 1, createdAt: '' }));
         forumServiceSpy.unvote.and.returnValue(of(void 0));

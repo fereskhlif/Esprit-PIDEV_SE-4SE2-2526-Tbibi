@@ -14,12 +14,18 @@ export class CommentItemComponent {
   @Input() replyText: string = '';
   @Input() submittingReply: boolean = false;
   @Input() isLast = false;
+  @Input() isPostAuthor = false;
 
   @Output() startReplyEvent = new EventEmitter<number>();
   @Output() submitReplyEvent = new EventEmitter<{ commentId: number, text: string }>();
   @Output() replyTextChange = new EventEmitter<string>();
+  @Output() toggleVoteEvent = new EventEmitter<CommentResponse>();
+  @Output() togglePinEvent = new EventEmitter<number>();
 
   // Add these properties
+  isCollapsed: boolean = false;
+  isHoveringLine: boolean = false;
+  isHoveringShowMore: boolean = false;
   replyPreview = false;
   readonly codeBlockPrefix = '\n```\n';
   readonly codeBlockSuffix = '\n```\n';
@@ -98,6 +104,18 @@ export class CommentItemComponent {
 
   onStartReply(commentId: number): void {
     this.startReplyEvent.emit(commentId);
+  }
+
+  onToggleVote(comment: CommentResponse): void {
+    this.toggleVoteEvent.emit(comment);
+  }
+
+  onTogglePin(): void {
+    this.togglePinEvent.emit(this.comment.commentId);
+  }
+
+  toggleCollapse(): void {
+    this.isCollapsed = !this.isCollapsed;
   }
 
   onSubmitReply(commentId: number): void {

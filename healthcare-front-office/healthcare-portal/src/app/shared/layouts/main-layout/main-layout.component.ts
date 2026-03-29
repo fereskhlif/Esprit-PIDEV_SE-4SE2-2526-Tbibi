@@ -1,7 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { CartService } from '../../../modules/patient/services/cart.service';
+import { WebSocketService } from '../../../services/websocket.service';
+import { NotificationService } from '../../../services/notification.service';
+import { NotificationResponse } from '../../../models/notification.model';
 
 interface NavItem {
   path: string;
@@ -17,7 +20,8 @@ interface NavItem {
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
   `]
 })
-export class MainLayoutComponent implements OnInit {
+export class MainLayoutComponent implements OnInit, OnDestroy {
+  currentUserId = 1; // Hardcoded for testing
   role: string = '';
   roleUrlPrefix: string = '';
   currentPage: string = 'dashboard';
@@ -26,6 +30,8 @@ export class MainLayoutComponent implements OnInit {
   floatingButton: { path: string; bgClass: string; title: string; count: number } | null = null;
   showNotifications = false;
   showProfileDropdown = false;
+  justReceivedNotification = false;
+  private lastUnreadCount = 0;
 
   private patientNav: NavItem[] = [
     { path: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
@@ -35,7 +41,7 @@ export class MainLayoutComponent implements OnInit {
     { path: 'appointments', icon: 'calendar', label: 'Appointments' },
     { path: 'doctor-schedules', icon: 'users', label: 'Doctor Schedules' },
     { path: 'prescriptions', icon: 'pill', label: 'Prescriptions' },
-    { path: 'pharmacy-list', icon: 'shopping-bag', label: 'Medicine Catalog' },
+    { path: 'pharmacy-list', icon: 'shopping-bag', label: 'Pharmacy Stores' },
     { path: 'my-orders', icon: 'package', label: 'My Orders' },
     { path: 'lab-results', icon: 'microscope', label: 'Lab Results' },
     { path: 'reminders', icon: 'clock', label: 'Reminders' },
@@ -92,7 +98,9 @@ export class MainLayoutComponent implements OnInit {
   constructor(
     public router: Router,
     private route: ActivatedRoute,
-    public cartService: CartService
+    public cartService: CartService,
+    private wsService: WebSocketService,
+    public notificationService: NotificationService
   ) { }
 
   ngOnInit() {
@@ -109,6 +117,19 @@ export class MainLayoutComponent implements OnInit {
       this.updateCurrentPage();
     });
     this.updateCurrentPage();
+
+    // Connect WebSocket & initialize notifications
+    this.wsService.connect();
+    this.notificationService.init(this.currentUserId);
+
+    // Watch for unread count changes to trigger "Pop" animation
+    this.notificationService.unreadCount$.subscribe(count => {
+      if (count > this.lastUnreadCount) {
+        this.justReceivedNotification = true;
+        setTimeout(() => this.justReceivedNotification = false, 1000);
+      }
+      this.lastUnreadCount = count;
+    });
   }
 
   // ✅ FIXED: navigateTo is now INSIDE the class
@@ -189,7 +210,20 @@ export class MainLayoutComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.wsService.disconnect();
+  }
+
+  onNotificationClick(n: NotificationResponse): void {
+    this.notificationService.onNotificationClick(n);
+    this.showNotifications = false;
+    if (n.redirectUrl) {
+      this.router.navigateByUrl(n.redirectUrl);
+    }
+  }
+
   logout() {
+    this.wsService.disconnect();
     this.router.navigate(['/']);
   }
 
@@ -224,5 +258,18 @@ export class MainLayoutComponent implements OnInit {
     };
 
     setTimeout(hideToast, 3000);
+  }
+
+  timeAgoNotification(dateStr: string): string {
+    const date = new Date(dateStr), now = new Date();
+    const s = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (s < 60) return 'just now';
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return `${d}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 }

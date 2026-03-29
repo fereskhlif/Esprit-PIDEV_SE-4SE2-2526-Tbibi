@@ -1,9 +1,10 @@
 import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Router, ActivatedRoute } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { Subject, forkJoin } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ForumService } from '../../services/forum.service';
-import { CategoryResponse, PostResponse } from '../../models/forum.models';
+import { CategoryResponse, PostResponse, Page } from '../../models/forum.models';
 
 @Component({
   selector: 'app-forum-home',
@@ -24,8 +25,11 @@ export class ForumHomeComponent implements OnInit {
   filterStatus: string = 'all';
 
   // Pagination
-  currentPage = 1;
-  postsPerPage = 10;
+  currentPage = 1; // 1-indexed for UI
+  postsPerPage = 12;
+  totalElements = 0;
+  
+  private searchSubject = new Subject<string>();
 
   // Role Data
   currentRole = 'PATIENT';
@@ -33,12 +37,10 @@ export class ForumHomeComponent implements OnInit {
   currentUserName = 'John Patient';
   expertCategory = '';
 
-  // ── STORED properties (NOT getters) ──
-  roleFilteredPosts: PostResponse[] = [];
-  filteredPosts: PostResponse[] = [];
   paginatedPosts: PostResponse[] = [];
   visibleCategories: CategoryResponse[] = [];
   filteredCategories: CategoryResponse[] = [];
+  globalTotalPosts = 0;
   totalPages = 1;
   pageNumbers: number[] = [];
   unansweredCount = 0;
@@ -66,7 +68,61 @@ export class ForumHomeComponent implements OnInit {
     this.titleService.setTitle(this.bannerTitle);
     document.title = data['title'] || 'Community Forum';
 
-    this.loadData();
+    // Search Debounce
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(query => {
+      this.searchQuery = query;
+      this.currentPage = 1;
+      this.syncUrlAndLoad();
+    });
+
+    // Subscribe to query params to update selection and page
+    this.route.queryParams.subscribe(params => {
+      const catName = params['cat'];
+      const page = params['page'] ? +params['page'] : 1;
+      const search = params['q'] || '';
+      const sort = params['sort'] || 'latest';
+      const status = params['status'] || 'all';
+      
+      this.currentPage = page;
+      this.searchQuery = search;
+      this.sortBy = sort;
+      this.filterStatus = status;
+
+      if (this.categories.length > 0) {
+        this.syncCategoryFromUrl(catName);
+        this.loadPostsOnly(); // Fetch new page/filter
+      } else {
+        this.loadData(); // Initial load (categories + posts)
+      }
+    });
+  }
+
+  private syncUrlAndLoad(): void {
+    const catName = this.categories.find(c => c.categoryId === this.selectedCategoryId)?.categoryName || null;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { 
+        cat: catName,
+        page: this.currentPage,
+        q: this.searchQuery || null,
+        sort: this.sortBy,
+        status: this.filterStatus
+      },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+
+  private syncCategoryFromUrl(catName: string | null): void {
+    if (!catName) {
+      this.selectedCategoryId = null;
+      return;
+    }
+    const found = this.categories.find(c => c.categoryName === catName);
+    this.selectedCategoryId = found ? found.categoryId : null;
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -78,21 +134,19 @@ export class ForumHomeComponent implements OnInit {
 
     forkJoin({
       categories: this.forumService.getCategories(),
-      posts: this.forumService.getPosts()
+      postsPage: this.getPostsObservable()
     }).subscribe({
-      next: ({ categories, posts }) => {
+      next: ({ categories, postsPage }) => {
         this.ngZone.run(() => {
           this.categories = categories.filter(c => c.active);
-          this.posts = posts;
-          this.currentPage = 1;
-          this.updateViewData();
+          
+          // Sync with URL after loading categories
+          const catName = this.route.snapshot.queryParams['cat'];
+          this.syncCategoryFromUrl(catName);
+          
+          this.handlePostsPage(postsPage);
           this.loading = false;
-
-          // Safety net: one extra CD cycle after DOM settles
-          setTimeout(() => {
-            this.cdr.markForCheck();
-            this.cdr.detectChanges();
-          }, 0);
+          this.cdr.detectChanges();
         });
       },
       error: () => {
@@ -104,22 +158,62 @@ export class ForumHomeComponent implements OnInit {
     });
   }
 
+  loadPostsOnly(): void {
+    this.loading = true;
+    this.getPostsObservable().subscribe({
+      next: (page) => {
+        this.handlePostsPage(page);
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.error = 'Failed to load posts.';
+        this.loading = false;
+      }
+    });
+  }
+
+  private getPostsObservable() {
+    const page0 = this.currentPage - 1;
+    const status = this.filterStatus === 'all' ? undefined : this.filterStatus.toUpperCase();
+    
+    if (this.searchQuery.trim()) {
+      return this.forumService.searchPostsPaginated(this.searchQuery, page0, this.postsPerPage, status, this.sortBy);
+    } else if (this.selectedCategoryId !== null) {
+      return this.forumService.getPostsByCategoryPaginated(this.selectedCategoryId, page0, this.postsPerPage, status, this.sortBy);
+    } else {
+      return this.forumService.getPostsPaginated(page0, this.postsPerPage, status, this.sortBy);
+    }
+  }
+
+  private handlePostsPage(page: Page<PostResponse>): void {
+    this.posts = page.content;
+    this.totalElements = page.totalElements;
+    this.totalPages = page.totalPages;
+    this.updateViewData();
+  }
+
+  onFilterChange(event: any) {
+    this.filterStatus = event.target.value;
+    this.currentPage = 1;
+    this.syncUrlAndLoad();
+  }
+
+  onSortChange(event: any) {
+    this.sortBy = event.target.value;
+    this.currentPage = 1;
+    this.syncUrlAndLoad();
+  }
+
   // ═══════════════════════════════════════════════════════════════════
   //  UPDATE VIEW DATA — computes ALL stored properties at once
   // ═══════════════════════════════════════════════════════════════════
   updateViewData(): void {
     // 0. Visible categories (role-based)
     this.visibleCategories = this.computeVisibleCategories();
+    this.globalTotalPosts = this.visibleCategories.reduce((acc, c) => acc + (c.postCount || 0), 0);
 
-    // 1. Role-filtered posts
-    if (this.currentRole === 'PATIENT') {
-      this.roleFilteredPosts = [...this.posts];
-    } else {
-      const names = this.visibleCategories.map(c => c.categoryName);
-      this.roleFilteredPosts = this.posts.filter(p => names.includes(p.categoryName));
-    }
-
-    // 2. Filtered categories (search)
+    // 1. Filtered categories (Frontend search)
     if (!this.searchQuery.trim()) {
       this.filteredCategories = [...this.visibleCategories];
     } else {
@@ -131,87 +225,27 @@ export class ForumHomeComponent implements OnInit {
       );
     }
 
-    // 3. Unanswered / expert counts
-    if (this.expertCategory) {
-      this.unansweredCount = this.roleFilteredPosts.filter(
-        p =>
-          p.categoryName === this.expertCategory &&
-          p.commentCount === 0 &&
-          p.postStatus === 'OPEN'
-      ).length;
-      this.expertCategoryPostCount = this.roleFilteredPosts.filter(
-        p => p.categoryName === this.expertCategory
-      ).length;
-    } else {
-      this.unansweredCount = 0;
-      this.expertCategoryPostCount = 0;
+    // 2. Expert counts (FETCH FROM SERVER IF EXPERT)
+    if (this.currentRole !== 'PATIENT' && this.selectedCategoryId) {
+      this.forumService.getCategoryStats(this.selectedCategoryId).subscribe(stats => {
+        this.expertCategoryPostCount = stats.totalPosts;
+        this.unansweredCount = stats.unansweredCount;
+        this.cdr.detectChanges();
+      });
     }
 
-    // 4. Main filter (category + status + search + sort)
-    let result = [...this.roleFilteredPosts];
-
-    if (this.selectedCategoryId !== null) {
-      result = result.filter(p => p.categoryId === this.selectedCategoryId);
-    }
-
-    if (this.filterStatus && this.filterStatus !== 'all') {
-      result = result.filter(p => p.postStatus === this.filterStatus.toUpperCase());
-    }
-
-    if (this.searchQuery.trim()) {
-      const q = this.searchQuery.toLowerCase();
-      result = result.filter(
-        p =>
-          p.title.toLowerCase().includes(q) ||
-          p.content.toLowerCase().includes(q)
-      );
-    }
-
-    // Sort
-    switch (this.sortBy) {
-      case 'newest':
-        result.sort(
-          (a, b) =>
-            new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
-        );
-        break;
-      case 'most_voted':
-        result.sort((a, b) => b.voteCount - a.voteCount);
-        break;
-      case 'latest':
-      default:
-        result.sort((a, b) => {
-          if (a.isPinned && !b.isPinned) return -1;
-          if (!a.isPinned && b.isPinned) return 1;
-          return (
-            new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
-          );
-        });
-        break;
-    }
-
-    this.filteredPosts = result;
-
-    // 5. Pagination
-    const perPage = Number(this.postsPerPage) || 10;
-    this.totalPages = Math.max(1, Math.ceil(this.filteredPosts.length / perPage));
-
-    // Clamp current page
-    if (this.currentPage > this.totalPages) {
-      this.currentPage = this.totalPages;
-    }
-
-    const start = (this.currentPage - 1) * perPage;
-    this.paginatedPosts = this.filteredPosts.slice(start, start + perPage);
+    this.paginatedPosts = [...this.posts];
 
     // 6. Page numbers
     const pages: number[] = [];
     const maxVisible = 5;
     let startPage = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
     let endPage = Math.min(this.totalPages, startPage + maxVisible - 1);
+    
     if (endPage - startPage < maxVisible - 1) {
       startPage = Math.max(1, endPage - maxVisible + 1);
     }
+    
     for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
     }
@@ -309,22 +343,38 @@ export class ForumHomeComponent implements OnInit {
     );
   }
 
-  selectCategory(categoryId: number | null): void {
-    this.selectedCategoryId = categoryId;
+  selectCategory(categoryName: string | null): void {
     this.currentPage = 1;
-    this.updateViewData();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { cat: categoryName, page: 1 },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  onSearch(query: string): void {
+    this.searchSubject.next(query);
+  }
+
+
+  getSelectedIndex(): number {
+    if (this.selectedCategoryId === null) return 0;
+    // +1 because "View All" is at index 0
+    const idx = this.filteredCategories.findIndex(c => c.categoryId === this.selectedCategoryId);
+    return idx !== -1 ? idx + 1 : 0;
   }
 
   changePage(page: number): void {
     if (page < 1 || page > this.totalPages) return;
     this.currentPage = page;
-    this.updateViewData();
+    this.syncUrlAndLoad();
   }
 
   onPerPageChange(): void {
     this.currentPage = 1;
-    this.updateViewData();
+    this.syncUrlAndLoad();
   }
+
 
   trackByCat(_index: number, cat: CategoryResponse): number {
     return cat.categoryId;

@@ -11,7 +11,7 @@ import { PatientMedicineService } from '../../services/patient-medicine.service'
 
         <!-- Header -->
         <div>
-            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Pharmacies</h1>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Pharmacy Stores</h1>
             <p class="text-sm text-gray-500 mt-1 font-medium">Select a pharmacy to browse available medicines</p>
         </div>
 
@@ -74,6 +74,7 @@ export class PharmacyListComponent implements OnInit {
     pharmacies: Pharmacy[] = [];
     loading = true;
     error = '';
+    searchQuery = '';
 
     constructor(
         private medicineService: PatientMedicineService,
@@ -102,6 +103,13 @@ export class PharmacyListComponent implements OnInit {
     goToPharmacy(pharmacy: Pharmacy): void {
         this.router.navigate(['/patient/pharmacy', pharmacy.pharmacyId, 'medicines'], {
             state: { pharmacyName: pharmacy.pharmacyName }
+        });
+    }
+
+    searchAllMedicines(): void {
+        if (!this.searchQuery.trim()) return;
+        this.router.navigate(['/patient/medicine-catalog'], {
+            queryParams: { search: this.searchQuery }
         });
     }
 }

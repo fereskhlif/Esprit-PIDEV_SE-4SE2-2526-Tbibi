@@ -12,4 +12,5 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findByParentCommentAndDeletedFalse(Comment parentComment);
     // count comments for a post
     long countByPostAndDeletedFalse(Post post);
+    long countByPostAndPinnedTrueAndDeletedFalse(Post post);
 }

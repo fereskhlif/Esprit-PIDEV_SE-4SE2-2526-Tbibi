@@ -4,7 +4,7 @@ import { ForumNewPostComponent } from './forum-new-post.component';
 import { ForumService } from '../../services/forum.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { of, throwError, delay, asyncScheduler } from 'rxjs';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA, Pipe, PipeTransform, Directive, Input, Output, EventEmitter } from '@angular/core';
 import { CategoryResponse, PostResponse } from '../../models/forum.models';
 
@@ -97,7 +97,7 @@ describe('ForumNewPostComponent', () => {
 
         await TestBed.configureTestingModule({
             declarations: [ForumNewPostComponent, MockMarkdownPipe, StubFilePickerDirective],
-            imports: [FormsModule],
+            imports: [FormsModule, ReactiveFormsModule],
             providers: [
                 { provide: ForumService, useValue: forumServiceSpy },
                 { provide: Router, useValue: routerSpy },
@@ -194,57 +194,79 @@ describe('ForumNewPostComponent', () => {
         }));
 
         it('should show error when category not selected', () => {
-            component.selectedCategoryId = null;
-            component.title = 'Test Title';
-            component.content = 'Test content';
+            component.postForm.patchValue({
+                categoryId: null,
+                title: 'Test Title',
+                content: 'Test content'
+            });
 
             component.submit();
 
-            expect(component.formError).toBe('Please select a category.');
+            expect(component.formError).toBe('Please correct the errors in the form.');
             expect(forumServiceSpy.createPost).not.toHaveBeenCalled();
         });
 
         it('should show error when title is empty', () => {
-            component.selectedCategoryId = 1;
-            component.title = '';
-            component.content = 'Test content';
+            component.postForm.patchValue({
+                categoryId: 1,
+                title: '',
+                content: 'Test content'
+            });
 
             component.submit();
 
-            expect(component.formError).toBe('Please enter a title.');
+            expect(component.formError).toBe('Please correct the errors in the form.');
+        });
+
+        it('should show error when title is too short', () => {
+            component.postForm.patchValue({
+                categoryId: 1,
+                title: 'Abc',
+                content: 'Test content'
+            });
+
+            component.submit();
+
+            expect(component.formError).toBe('Please correct the errors in the form.');
         });
 
         it('should show error when title is only whitespace', () => {
-            component.selectedCategoryId = 1;
-            component.title = '   ';
-            component.content = 'Test content';
+            component.postForm.patchValue({
+                categoryId: 1,
+                title: '   ',
+                content: 'Test content'
+            });
 
             component.submit();
 
-            expect(component.formError).toBe('Please enter a title.');
+            expect(component.formError).toBe('Please correct the errors in the form.');
         });
 
         it('should show error when content is empty and no files', () => {
-            component.selectedCategoryId = 1;
-            component.title = 'Test Title';
-            component.content = '';
+            component.postForm.patchValue({
+                categoryId: 1,
+                title: 'Test Title',
+                content: ''
+            });
             component.selectedFiles = [];
 
             component.submit();
 
-            expect(component.formError).toBe('Please enter post content or upload media.');
+            expect(component.formError).toBe('Please correct the errors in the form.');
         });
 
-        it('should allow submission with files but no content', () => {
-            component.selectedCategoryId = 1;
-            component.title = 'Test Title';
-            component.content = '';
+        it('should not allow submission with files but no content (due to Validators.required)', () => {
+            component.postForm.patchValue({
+                categoryId: 1,
+                title: 'Test Title',
+                content: ''
+            });
             component.selectedFiles = [new File([''], 'test.jpg')];
 
             component.submit();
 
-            // No error because files are present
-            expect(component.formError).toBe('');
+            // Error because Validators.required is on content
+            expect(component.formError).toBe('Please correct the errors in the form.');
         });
     });
 
@@ -260,9 +282,11 @@ describe('ForumNewPostComponent', () => {
         }));
 
         it('should create post without media', fakeAsync(() => {
-            component.selectedCategoryId = 1;
-            component.title = 'Test Title';
-            component.content = 'Test content';
+            component.postForm.patchValue({
+                categoryId: 1,
+                title: 'Test Title',
+                content: 'Test content that is long enough'
+            });
             component.selectedFiles = [];
 
             component.submit();
@@ -270,7 +294,7 @@ describe('ForumNewPostComponent', () => {
 
             expect(forumServiceSpy.createPost).toHaveBeenCalledWith({
                 title: 'Test Title',
-                content: 'Test content',
+                content: 'Test content that is long enough',
                 categoryId: 1,
                 authorId: 1
             });
@@ -279,9 +303,11 @@ describe('ForumNewPostComponent', () => {
         }));
 
         it('should create post with media', fakeAsync(() => {
-            component.selectedCategoryId = 1;
-            component.title = 'Test Title';
-            component.content = 'Test content';
+            component.postForm.patchValue({
+                categoryId: 1,
+                title: 'Test Title',
+                content: 'Test content that is long enough'
+            });
             component.selectedFiles = [new File([''], 'test.jpg')];
 
             component.submit();
@@ -292,9 +318,11 @@ describe('ForumNewPostComponent', () => {
         }));
 
         it('should show submitting state', fakeAsync(() => {
-            component.selectedCategoryId = 1;
-            component.title = 'Test Title';
-            component.content = 'Test content';
+            component.postForm.patchValue({
+                categoryId: 1,
+                title: 'Test Title',
+                content: 'Test content that is long enough'
+            });
 
             expect(component.submitting).toBe(false);
 
@@ -310,9 +338,11 @@ describe('ForumNewPostComponent', () => {
         it('should handle post creation error', fakeAsync(() => {
             forumServiceSpy.createPost.and.returnValue(throwError(() => new Error('Failed')));
 
-            component.selectedCategoryId = 1;
-            component.title = 'Test Title';
-            component.content = 'Test content';
+            component.postForm.patchValue({
+                categoryId: 1,
+                title: 'Test Title',
+                content: 'Test content that is long enough'
+            });
 
             component.submit();
             tick();
@@ -322,9 +352,11 @@ describe('ForumNewPostComponent', () => {
         }));
 
         it('should navigate after successful post creation', fakeAsync(() => {
-            component.selectedCategoryId = 1;
-            component.title = 'Test Title';
-            component.content = 'Test content';
+            component.postForm.patchValue({
+                categoryId: 1,
+                title: 'Test Title',
+                content: 'Test content that is long enough'
+            });
 
             component.submit();
             tick();
@@ -404,10 +436,10 @@ describe('ForumNewPostComponent', () => {
             textarea.selectionStart = 0;
             textarea.selectionEnd = 5;
 
-            component.content = 'Hello World';
+            component.postForm.get('content')?.setValue('Hello World');
             component.insertMarkdown('**', '**', textarea);
 
-            expect(component.content).toContain('**Hello**');
+            expect(component.postForm.get('content')?.value).toContain('**Hello**');
         });
 
         it('should insert code block', () => {
@@ -416,10 +448,10 @@ describe('ForumNewPostComponent', () => {
             textarea.selectionStart = 0;
             textarea.selectionEnd = 4;
 
-            component.content = 'code';
+            component.postForm.get('content')?.setValue('code');
             component.insertMarkdown('\n```\n', '\n```\n', textarea);
 
-            expect(component.content).toContain('```');
+            expect(component.postForm.get('content')?.value).toContain('```');
         });
     });
 
@@ -431,25 +463,25 @@ describe('ForumNewPostComponent', () => {
 
         it('should clear content when confirmed', () => {
             spyOn(window, 'confirm').and.returnValue(true);
-            component.content = 'Some content';
+            component.postForm.get('content')?.setValue('Some content');
 
             component.clearContent();
 
-            expect(component.content).toBe('');
+            expect(component.postForm.get('content')?.value).toBe('');
         });
 
         it('should not clear when cancelled', () => {
             spyOn(window, 'confirm').and.returnValue(false);
-            component.content = 'Some content';
+            component.postForm.get('content')?.setValue('Some content');
 
             component.clearContent();
 
-            expect(component.content).toBe('Some content');
+            expect(component.postForm.get('content')?.value).toBe('Some content');
         });
 
         it('should not prompt when content is empty', () => {
             const confirmSpy = spyOn(window, 'confirm');
-            component.content = '';
+            component.postForm.get('content')?.setValue('');
 
             component.clearContent();
 

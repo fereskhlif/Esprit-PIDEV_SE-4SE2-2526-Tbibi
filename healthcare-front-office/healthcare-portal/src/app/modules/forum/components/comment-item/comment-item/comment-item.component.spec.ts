@@ -23,6 +23,9 @@ describe('CommentItemComponent', () => {
         authorName: 'John Doe',
         postId: 1,
         parentCommentId: null,
+        isPinned: false,
+        voteCount: 0,
+        userHasVoted: false,
         replies: [
             {
                 commentId: 2,
@@ -34,6 +37,9 @@ describe('CommentItemComponent', () => {
                 authorName: 'Jane Smith',
                 postId: 1,
                 parentCommentId: 1,
+                isPinned: false,
+                voteCount: 0,
+                userHasVoted: false,
                 replies: []
             }
         ]
@@ -348,8 +354,61 @@ describe('CommentItemComponent', () => {
     describe('Nested Replies', () => {
 
         it('should have replies in comment', () => {
-            expect(component.comment.replies.length).toBe(1);
-            expect(component.comment.replies[0].authorName).toBe('Jane Smith');
+            expect(component.comment.replies!.length).toBe(1);
+            expect(component.comment.replies![0].authorName).toBe('Jane Smith');
+        });
+    });
+
+    // ══════════════════════════════════════════════════════════════════
+    // INTERACTION LOGIC (NEW)
+    // ══════════════════════════════════════════════════════════════════
+
+    describe('Interaction Logic', () => {
+
+        it('should toggle isCollapsed when toggleCollapse is called', () => {
+            expect(component.isCollapsed).toBeFalse();
+            component.toggleCollapse();
+            expect(component.isCollapsed).toBeTrue();
+            component.toggleCollapse();
+            expect(component.isCollapsed).toBeFalse();
+        });
+
+        it('should track isHoveringLine state', () => {
+            expect(component.isHoveringLine).toBeFalse();
+            component.isHoveringLine = true;
+            expect(component.isHoveringLine).toBeTrue();
+        });
+
+        it('should track isHoveringShowMore state', () => {
+            expect(component.isHoveringShowMore).toBeFalse();
+            component.isHoveringShowMore = true;
+            expect(component.isHoveringShowMore).toBeTrue();
+        });
+
+        it('should return correct avatarColor based on depth', () => {
+            component.depth = 0;
+            expect(component.avatarColor).toBe('bg-blue-600');
+            component.depth = 4;
+            expect(component.avatarColor).toBe('bg-violet-500');
+        });
+    });
+
+    // ══════════════════════════════════════════════════════════════════
+    // VOTE & PIN EVENTS (NEW)
+    // ══════════════════════════════════════════════════════════════════
+
+    describe('Vote & Pin Events', () => {
+
+        it('should emit toggleVoteEvent when onToggleVote is called', () => {
+            spyOn(component.toggleVoteEvent, 'emit');
+            component.onToggleVote(mockComment);
+            expect(component.toggleVoteEvent.emit).toHaveBeenCalledWith(mockComment);
+        });
+
+        it('should emit togglePinEvent when onTogglePin is called', () => {
+            spyOn(component.togglePinEvent, 'emit');
+            component.onTogglePin();
+            expect(component.togglePinEvent.emit).toHaveBeenCalledWith(mockComment.commentId);
         });
     });
 });

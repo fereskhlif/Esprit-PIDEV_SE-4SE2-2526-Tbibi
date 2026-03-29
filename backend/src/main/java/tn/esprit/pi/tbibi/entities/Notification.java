@@ -17,17 +17,14 @@ public class Notification {
     Long notificationId;
 
     String message;
-
-    Boolean isRead;
-
+    Boolean isRead = false;
     LocalDateTime createdAt;
+    String redirectUrl;
 
     @Enumerated(EnumType.STRING)
     NotificationType type;
 
-    String redirectUrl;;
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recipient_user_id")
     User recipient;
-
 }

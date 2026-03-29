@@ -72,6 +72,7 @@ describe('MyOrdersComponent', () => {
         }));
 
         it('should handle loading error', fakeAsync(() => {
+            spyOn(console, 'error');
             orderServiceSpy.getOrdersByUser.and.returnValue(
                 throwError(() => new Error('Failed'))
             );
@@ -120,6 +121,7 @@ describe('MyOrdersComponent', () => {
         });
 
         it('should handle cancel error', fakeAsync(() => {
+            spyOn(console, 'error');
             spyOn(window, 'confirm').and.returnValue(true);
             orderServiceSpy.cancelOrder.and.returnValue(
                 throwError(() => new Error('Failed'))

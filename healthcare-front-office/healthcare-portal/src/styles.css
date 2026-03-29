@@ -3380,3 +3380,122 @@ webcam video {
   background: white;
   flex-wrap: wrap;
 }
+
+/* ══════════════════════════════════════════ */
+/*   PREMIUM UI ANIMATIONS & EFFECTS          */
+/* ══════════════════════════════════════════ */
+
+/* 1. Staggered Entry (Glide Up) */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  opacity: 0;
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* stagger-delay variable application */
+.stagger-item {
+  animation-delay: calc(var(--index, 0) * 0.05s);
+}
+
+/* 2. Notification Bell & Badge */
+@keyframes bellBounce {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(15deg); }
+  40% { transform: rotate(-12deg); }
+  60% { transform: rotate(8deg); }
+  80% { transform: rotate(-5deg); }
+}
+
+.animate-bell-bounce {
+  animation: bellBounce 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes countPop {
+  0% { transform: translate(50%, -50%) scale(0.6); opacity: 0; }
+  70% { transform: translate(50%, -50%) scale(1.25); opacity: 1; }
+  100% { transform: translate(50%, -50%) scale(1); opacity: 1; }
+}
+
+.animate-count-pop {
+  animation: countPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.1); }
+  50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s infinite;
+}
+
+/* 3. Button Shimmer Sweep */
+@keyframes shimmerSweep {
+  from { transform: translateX(-100%) skewX(-15deg); }
+  to { transform: translateX(200%) skewX(-15deg); }
+}
+
+.shimmer-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transition: none;
+  pointer-events: none;
+}
+
+.shimmer-btn:hover::after {
+  animation: shimmerSweep 0.8s ease-out forwards;
+}
+
+/* 4. Common Premium Hover Utilities */
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+}
+
+.search-focus-glow:focus-within {
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+  border-color: #3b82f6;
+  transform: scale(1.01);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 5. Sidebar Sliding Indicator (Logic) */
+.sidebar-indicator {
+  position: absolute;
+  left: 0;
+  width: 4px;
+  background: #2563eb;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 0 4px 4px 0;
+  z-index: 10;
+}

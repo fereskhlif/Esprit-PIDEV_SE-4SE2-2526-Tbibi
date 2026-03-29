@@ -1,13 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ForumService } from '../../services/forum.service';
 import { PostResponse, CommentResponse } from '../../models/forum.models';
+import { WebSocketService } from '../../../../services/websocket.service';
+import { StompSubscription } from '@stomp/stompjs';
 
 @Component({
   selector: 'app-forum-post',
   templateUrl: './forum-post.component.html'
 })
-export class ForumPostComponent implements OnInit {
+export class ForumPostComponent implements OnInit, OnDestroy {
 
   postId = 0;
   post: PostResponse | null = null;
@@ -24,6 +26,8 @@ export class ForumPostComponent implements OnInit {
   // Vote
   hasVoted = false;
   voteCount = 0;
+  votedCommentIds: number[] = [];
+  commentSortOrder: 'newest' | 'oldest' = 'oldest';
 
   // Comment
   newComment = '';
@@ -44,6 +48,10 @@ export class ForumPostComponent implements OnInit {
   selectedFiles: File[] = [];
   filePreviews: string[] = [];
 
+  // WebSocket subscriptions
+  private commentSub: StompSubscription | null = null;
+  private voteSub: StompSubscription | null = null;
+
   // Code block marker strings as properties so template can reference them
   // (avoids backtick issues in Angular template expressions)
   readonly codeBlockPrefix = '\n```\n';
@@ -52,7 +60,8 @@ export class ForumPostComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private forumService: ForumService
+    private forumService: ForumService,
+    private wsService: WebSocketService
   ) { }
 
   ngOnInit(): void {
@@ -96,12 +105,122 @@ export class ForumPostComponent implements OnInit {
     });
   }
 
+  private subscribeToRealTimeUpdates(): void {
+    // Real-time comments
+    this.wsService.subscribe(`/topic/post/${this.postId}/comments`, (msg) => {
+      const newComment: CommentResponse = JSON.parse(msg.body);
+      // Only add if not from current user (REST already added it locally)
+      if (newComment.authorId !== this.currentUserId) {
+        // Check if it's a reply or a top-level comment
+        if (newComment.parentCommentId) {
+          // It's a reply — reload all comments to get proper nesting
+          this.loadComments();
+        } else {
+          // Top-level comment — append to list
+          this.comments = [...this.comments, newComment];
+        }
+      }
+    }).then(sub => this.commentSub = sub);
+
+    // Real-time vote count
+    this.wsService.subscribe(`/topic/post/${this.postId}/votes`, (msg) => {
+      this.voteCount = parseInt(msg.body, 10);
+    }).then(sub => this.voteSub = sub);
+  }
+
+  ngOnDestroy(): void {
+    if (this.commentSub) this.commentSub.unsubscribe();
+    if (this.voteSub) this.voteSub.unsubscribe();
+  }
+
   loadComments(): void {
     this.forumService.getCommentsByPost(this.postId).subscribe({
-      next: (data) => this.comments = data,
+      next: (data) => {
+        this.comments = data;
+        this.applyVotedComments(this.comments, this.votedCommentIds);
+        this.sortComments();
+        // Subscribe to real-time updates after first comment load
+        if (!this.commentSub && !this.voteSub) {
+          this.subscribeToRealTimeUpdates();
+        }
+      },
       error: () => { }
     });
   }
+
+  // ─── Comment Sorting & Voting ───────────────────────────────────────────
+
+  sortComments(): void {
+    if (!this.comments) return;
+    this.comments.sort((a, b) => {
+      const pinA = !!a.isPinned;
+      const pinB = !!b.isPinned;
+
+      // 1. Pinned status first (true first)
+      if (pinA && !pinB) return -1;
+      if (!pinA && pinB) return 1;
+
+      // 2. Then by chosen date order
+      const dateA = new Date(a.commentDate).getTime();
+      const dateB = new Date(b.commentDate).getTime();
+      return this.commentSortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+  }
+
+  toggleCommentSort(): void {
+    this.commentSortOrder = this.commentSortOrder === 'newest' ? 'oldest' : 'newest';
+    this.sortComments();
+  }
+
+  toggleCommentVote(comment: CommentResponse): void {
+    if (!this.currentUserId || this.currentUserId <= 0) return;
+    
+    if (comment.userHasVoted) {
+      this.forumService.unvoteComment(this.currentUserId, comment.commentId).subscribe({
+        next: () => {
+          comment.userHasVoted = false;
+          comment.voteCount = Math.max(0, (comment.voteCount || 0) - 1);
+          this.votedCommentIds = this.votedCommentIds.filter(id => id !== comment.commentId);
+        }
+      });
+    } else {
+      this.forumService.voteComment(this.currentUserId, comment.commentId).subscribe({
+        next: () => {
+          comment.userHasVoted = true;
+          comment.voteCount = (comment.voteCount || 0) + 1;
+          this.votedCommentIds.push(comment.commentId);
+        }
+      });
+    }
+  }
+
+  onTogglePin(commentId: number): void {
+    if (this.currentUserId <= 0) return;
+    
+    this.forumService.togglePinComment(commentId, this.currentUserId).subscribe({
+      next: () => {
+        // Reload comments to reflect new positions and states
+        this.loadComments();
+      },
+      error: (err) => {
+        // Show the backend error message (e.g. "Maximum 3 pinned comments reached")
+        const msg = err.error?.message || err.message || 'Failed to toggle pin.';
+        alert(msg);
+      }
+    });
+  }
+
+  applyVotedComments(comments: CommentResponse[], votedIds: number[]): void {
+    if (!comments || !votedIds) return;
+    comments.forEach(c => {
+      c.userHasVoted = votedIds.includes(c.commentId);
+      if (c.replies) {
+        this.applyVotedComments(c.replies, votedIds);
+      }
+    });
+  }
+
+  // ─── Post Voting ────────────────────────────────────────────────────────
 
   onSubmitReplyFromComponent(event: { commentId: number; text: string }): void {
     this.replyText = event.text;
@@ -112,6 +231,14 @@ export class ForumPostComponent implements OnInit {
     if (!this.currentUserId || this.currentUserId <= 0) return;
     this.forumService.checkVote(this.currentUserId, this.postId).subscribe({
       next: (voted) => this.hasVoted = voted,
+      error: () => { }
+    });
+
+    this.forumService.getUserVotedComments(this.currentUserId, this.postId).subscribe({
+      next: (ids) => {
+        this.votedCommentIds = ids;
+        this.applyVotedComments(this.comments, this.votedCommentIds);
+      },
       error: () => { }
     });
   }

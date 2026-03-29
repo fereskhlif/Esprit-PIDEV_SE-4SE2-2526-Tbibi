@@ -52,31 +52,74 @@
           <div *ngIf="role === 'patient'" class="h-8 w-px bg-gray-200 mx-1"></div>
 
           <!-- Notification Bell -->
-          <div class="relative cursor-pointer p-2 hover:bg-gray-100 rounded-full transition-colors" (click)="showNotifications = !showNotifications">
-            <lucide-icon name="bell" class="w-6 h-6 text-gray-600"></lucide-icon>
-            <span *ngIf="floatingButton" class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+          <div class="relative cursor-pointer hover:bg-gray-100 rounded-full transition-colors flex items-center justify-center" 
+               style="width: 42px; height: 42px;" 
+               [class.animate-pulse-glow]="(notificationService.unreadCount$ | async)! > 0"
+               (click)="showNotifications = !showNotifications; $event.stopPropagation()">
+            
+            <lucide-icon name="bell" class="w-6 h-6 text-gray-700"
+              [class.animate-bell-bounce]="justReceivedNotification"></lucide-icon>
+            
+            <!-- Unread Badge -->
+            <span *ngIf="(notificationService.unreadCount$ | async)! > 0"
+              class="bg-red-500 text-white font-bold flex items-center justify-center rounded-full shadow-sm"
+              [class.animate-count-pop]="justReceivedNotification"
+              style="position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px; font-size: 11px; padding: 0 5px; line-height: 1; border: 2px solid white;">
+              {{ (notificationService.unreadCount$ | async)! > 99 ? '99+' : (notificationService.unreadCount$ | async) }}
+            </span>
 
-            <!-- Notification Dropdown (Click) -->
-            <div *ngIf="showNotifications" class="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-50 animate-fade-in" (click)="$event.stopPropagation()">
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="font-semibold text-sm">Notifications</h3>
-                <span class="text-xs text-blue-600 cursor-pointer">Mark all read</span>
+            <!-- Notification Dropdown -->
+            <div *ngIf="showNotifications" class="absolute bg-white rounded-xl shadow-xl border border-gray-100 z-50 animate-fade-in overflow-hidden" 
+                 style="width: 360px; max-width: 90vw; right: 0; top: 100%; margin-top: 8px;" (click)="$event.stopPropagation()">
+              
+              <!-- Header -->
+              <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50 flex-shrink-0">
+                <h3 class="font-bold text-[15px] text-gray-900">Notifications</h3>
+                <button
+                  (click)="router.navigate(['/notifications']); showNotifications = false"
+                  class="text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer transition-colors whitespace-nowrap">
+                  See All
+                </button>
               </div>
-              <div class="space-y-3">
-                <div *ngIf="floatingButton" class="flex gap-3 items-start p-2 rounded-lg bg-blue-50">
-                  <span class="text-lg bg-white rounded-full p-1"><lucide-icon name="bell" class="w-4 h-4 text-blue-600"></lucide-icon></span>
-                  <div>
-                    <p class="text-sm font-medium text-gray-900">{{floatingButton.title}}</p>
-                    <p class="text-xs text-gray-500">{{floatingButton.count}} pending items</p>
-                    <button (click)="navigateTo(floatingButton.path); showNotifications = false" class="text-xs text-blue-600 font-medium mt-1 hover:underline">View details →</button>
-                  </div>
-                </div>
-                <div class="flex gap-3 items-start p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                  <span class="text-lg bg-gray-100 rounded-full p-1"><lucide-icon name="settings" class="w-4 h-4 text-gray-600"></lucide-icon></span>
-                  <div>
-                    <p class="text-sm font-medium text-gray-900">System Update</p>
-                    <p class="text-xs text-gray-500">Maintenance scheduled for Sunday</p>
-                  </div>
+
+              <!-- Scrollable List -->
+              <div class="overflow-y-auto" style="max-height: 320px; min-height: 100px;">
+                <div class="p-2">
+                  <ng-container *ngIf="(notificationService.notifications$ | async) as notifications">
+                    
+                    <!-- Empty State -->
+                    <div *ngIf="notifications.length === 0" class="py-12 text-center">
+                      <lucide-icon name="bell" [size]="32" class="text-gray-200 mx-auto mb-3"></lucide-icon>
+                      <p class="text-sm text-gray-400 font-medium whitespace-nowrap">No notifications yet</p>
+                    </div>
+
+                    <!-- Notification Items -->
+                    <div *ngFor="let n of notifications" 
+                      (click)="onNotificationClick(n)"
+                      class="flex items-start gap-3 p-3 mb-1 cursor-pointer rounded-lg transition-colors"
+                      [ngClass]="n.isRead ? 'hover:bg-gray-100 bg-white' : 'bg-blue-50/60 hover:bg-blue-100'">
+                      
+                      <!-- Icon -->
+                      <div class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+                        [ngClass]="n.type === 'FORUM' ? 'bg-purple-100 text-purple-600' : n.type === 'ORDER' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'">
+                        <lucide-icon [name]="n.type === 'FORUM' ? 'message-circle' : n.type === 'ORDER' ? 'package' : 'bell'" [size]="20" strokeWidth="1.5"></lucide-icon>
+                      </div>
+
+                      <!-- Content -->
+                      <div class="flex-1 min-w-0 mr-2">
+                        <p class="text-[13px] leading-snug break-words" [ngClass]="n.isRead ? 'text-gray-700' : 'text-gray-900 font-semibold'">
+                          {{ n.message }}
+                        </p>
+                        <p class="text-[11px] mt-1" [ngClass]="n.isRead ? 'text-gray-500' : 'text-blue-600 font-medium'">
+                          {{ timeAgoNotification(n.createdAt) }}
+                        </p>
+                      </div>
+
+                      <!-- Unread Dot -->
+                      <div *ngIf="!n.isRead" class="shrink-0 w-2.5 h-2.5 bg-blue-600 rounded-full mt-1"></div>
+                    </div>
+
+                  </ng-container>
                 </div>
               </div>
             </div>
@@ -105,6 +148,10 @@
               
               <button (click)="navigateTo('profile'); showProfileDropdown = false" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
                 <lucide-icon name="user" [size]="16" class="text-gray-400"></lucide-icon> View Profile
+              </button>
+              
+              <button (click)="router.navigate(['/patient/forum/my-posts']); showProfileDropdown = false" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
+                <lucide-icon name="message-square" [size]="16" class="text-gray-400"></lucide-icon> My Posts
               </button>
               
               <div class="h-px bg-gray-100 my-1"></div>

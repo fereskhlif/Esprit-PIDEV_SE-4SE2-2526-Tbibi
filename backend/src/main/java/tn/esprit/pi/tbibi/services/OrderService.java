@@ -27,6 +27,7 @@ public class OrderService implements IOrderService {
     OrderMapper orderMapper;
     MedicineRepository medicineRepo;
     OrderLineMapper orderLineMapper;
+    NotificationService notificationService;
 
     // ─── Helper: maps an Order and loads its lines with medicine name ──────────
     private OrderResponse mapWithLines(Order order) {
@@ -70,14 +71,22 @@ public class OrderService implements IOrderService {
             orderLines.add(orderLine);
 
             totalAmount += medicine.getPrice() * lineRequest.getQuantity();
-
-            medicine.setStock(medicine.getStock() - lineRequest.getQuantity());
-            medicineRepo.save(medicine);
         }
 
         order.setOrderLines(orderLines);
         order.setTotalAmount(totalAmount);
         Order saved = orderRepo.save(order);
+
+        // ─── Notify pharmacist of new order ───────────────────────────────
+        userRepo.findByPharmacy_PharmacyId(pharmacy.getPharmacyId()).ifPresent(pharmacist ->
+                notificationService.createAndSend(
+                        pharmacist,
+                        "New order from " + user.getName() + " — " + orderLines.size() + " item(s)",
+                        NotificationType.ORDER,
+                        "/pharmacist/orders"
+                )
+        );
+
         return mapWithLines(saved);
     }
 
@@ -105,16 +114,51 @@ public class OrderService implements IOrderService {
             order.setDeliveryDate(new Date());
         }
 
-        if (Status.valueOf(status) == Status.REJECTED ||
-                Status.valueOf(status) == Status.CANCELLED) {
+        if (Status.valueOf(status) == Status.CONFIRMED) {
             for (OrderLine line : order.getOrderLines()) {
                 Medicine medicine = line.getMedicine();
-                medicine.setStock(medicine.getStock() + line.getQuantity());
+                if (medicine.getStock() < line.getQuantity()) {
+                    throw new RuntimeException("Cannot confirm order. Not enough stock for: " + medicine.getMedicineName());
+                }
+                
+                medicine.setStock(medicine.getStock() - line.getQuantity());
                 medicineRepo.save(medicine);
+
+                // ─── Low stock alert ──────────────────────────────────────────
+                if (medicine.getStock() < medicine.getMinStockAlert()) {
+                    userRepo.findByPharmacy_PharmacyId(order.getPharmacy().getPharmacyId()).ifPresent(pharmacist ->
+                            notificationService.createAndSend(
+                                    pharmacist,
+                                    "⚠️ Low stock: " + medicine.getMedicineName() +
+                                            " has only " + medicine.getStock() + " units left!",
+                                    NotificationType.ORDER,
+                                    "/pharmacist/medicines"
+                            )
+                    );
+                }
             }
         }
 
-        return mapWithLines(orderRepo.save(order));
+        Order saved = orderRepo.save(order);
+
+        // ─── Notify user about order status change ────────────────────────
+        String statusMsg = switch (Status.valueOf(status)) {
+            case CONFIRMED -> "✅ Your order has been confirmed!";
+            case REJECTED -> "❌ Your order has been rejected.";
+            case DELIVERED -> "📦 Your order has been delivered!";
+            case IN_PROGRESS -> "🔄 Your order is being prepared.";
+            default -> null;
+        };
+        if (statusMsg != null) {
+            notificationService.createAndSend(
+                    order.getUser(),
+                    statusMsg,
+                    NotificationType.ORDER,
+                    "/patient/orders"
+            );
+        }
+
+        return mapWithLines(saved);
     }
 
     @Override

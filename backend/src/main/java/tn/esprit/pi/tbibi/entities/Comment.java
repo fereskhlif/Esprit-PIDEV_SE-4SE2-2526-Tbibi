@@ -29,8 +29,13 @@ public class Comment {
     LocalDateTime updatedDate;
 
     // ⭐ CHANGED: Removed columnDefinition
+    @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     Boolean deleted = false;
+
+    @Builder.Default
+    @Column(name = "is_pinned", nullable = false)
+    boolean pinned = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")

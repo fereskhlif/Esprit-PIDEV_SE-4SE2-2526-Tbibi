@@ -276,6 +276,8 @@ class ForumControllerTest {
         PostRequest request = PostRequest.builder()
                 .title("Updated Title")
                 .content("Updated content")
+                .authorId(1)
+                .categoryId(1L)
                 .build();
 
         PostResponse updatedResponse = PostResponse.builder()

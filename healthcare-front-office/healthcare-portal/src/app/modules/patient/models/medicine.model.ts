@@ -11,4 +11,19 @@ export interface Medicine {
     available: boolean;
     pharmacyId: number;
     imageUrls: string[];
+    pharmacy?: any; // Add pharmacy object for global search branding
+    form?: string;
+}
+
+export interface Page<T> {
+    content: T[];
+    totalPages: number;
+    totalElements: number;
+    last: boolean;
+    size: number;
+    number: number;
+    sort: any;
+    numberOfElements: number;
+    first: boolean;
+    empty: boolean;
 }

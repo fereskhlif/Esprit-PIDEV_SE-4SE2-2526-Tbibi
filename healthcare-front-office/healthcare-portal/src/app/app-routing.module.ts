@@ -50,6 +50,12 @@ const routes: Routes = [
     data: { role: 'patient' },
     loadChildren: () => import('./modules/forum/forum.module').then(m => m.ForumModule)
   },
+  {
+    path: 'notifications',
+    component: MainLayoutComponent,
+    data: { role: 'patient' }, // Default header role, could be dynamic later
+    loadChildren: () => import('./modules/notifications/notifications.module').then(m => m.NotificationsModule)
+  },
   { path: '**', redirectTo: '' }
 ];
 

@@ -37,8 +37,11 @@ export interface CommentResponse {
   authorId: number;
   authorName: string;
   postId: number;
-  parentCommentId: number | null;
-  replies: CommentResponse[];
+  parentCommentId?: number | null;
+  replies?: CommentResponse[];
+  voteCount?: number;
+  userHasVoted?: boolean;
+  isPinned: boolean;
 }
 
 export interface VoteResponse {
@@ -66,4 +69,17 @@ export interface CreateCommentRequest {
 export interface VoteRequest {
   userId: number;
   postId: number;
+}
+
+export interface Page<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  last: boolean;
+  size: number;
+  number: number;
+  sort: any;
+  numberOfElements: number;
+  first: boolean;
+  empty: boolean;
 }

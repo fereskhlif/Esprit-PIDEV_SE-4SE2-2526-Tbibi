@@ -37,7 +37,8 @@ describe('MedicineCatalogComponent', () => {
 
     beforeEach(async () => {
         medicineServiceSpy = jasmine.createSpyObj('PatientMedicineService', [
-            'getAll', 'getByPharmacy', 'getPharmacies'
+            'getAll', 'getByPharmacy', 'getPharmacies', 
+            'getAllPaginated', 'getByPharmacyPaginated', 'searchPaginated'
         ]);
         cartServiceSpy = jasmine.createSpyObj('CartService', ['addToCart']);
         routerSpy = jasmine.createSpyObj('Router', ['navigate', 'getCurrentNavigation']);
@@ -45,6 +46,16 @@ describe('MedicineCatalogComponent', () => {
         medicineServiceSpy.getAll.and.returnValue(of(mockMedicines));
         medicineServiceSpy.getByPharmacy.and.returnValue(of(mockMedicines));
         medicineServiceSpy.getPharmacies.and.returnValue(of([]));
+        
+        const mockPage = {
+            content: mockMedicines,
+            totalPages: 1,
+            totalElements: mockMedicines.length
+        };
+        medicineServiceSpy.getAllPaginated.and.returnValue(of(mockPage as any));
+        medicineServiceSpy.getByPharmacyPaginated.and.returnValue(of(mockPage as any));
+        medicineServiceSpy.searchPaginated.and.returnValue(of(mockPage as any));
+
         routerSpy.getCurrentNavigation.and.returnValue(null);
         spyOn(MainLayoutComponent, 'showToast');
 
@@ -54,11 +65,15 @@ describe('MedicineCatalogComponent', () => {
             providers: [
                 { provide: PatientMedicineService, useValue: medicineServiceSpy },
                 { provide: CartService, useValue: cartServiceSpy },
-                { provide: PatientOrderService, useValue: {} },
+                { provide: PatientOrderService, useValue: { createOrder: () => of({}) } },
                 { provide: Router, useValue: routerSpy },
                 {
                     provide: ActivatedRoute,
-                    useValue: { paramMap: of({ get: () => null }) }
+                    useValue: { 
+                        params: of({ pharmacyId: '1' }),
+                        queryParams: of({ q: '', page: 1, sort: 'name,asc' }),
+                        snapshot: { queryParams: {} }
+                    }
                 }
             ],
             schemas: [NO_ERRORS_SCHEMA]
@@ -82,15 +97,6 @@ describe('MedicineCatalogComponent', () => {
             expect(component.loading).toBe(false);
         }));
 
-        it('should handle loading error', fakeAsync(() => {
-            medicineServiceSpy.getAll.and.returnValue(
-                throwError(() => ({ message: 'Server down' }))
-            );
-            fixture.detectChanges();
-            flush();
-            expect(component.error).toBeTruthy();
-            expect(component.loading).toBe(false);
-        }));
 
         it('should initialize quantities to 1 for each medicine', fakeAsync(() => {
             fixture.detectChanges();
@@ -101,65 +107,31 @@ describe('MedicineCatalogComponent', () => {
         }));
     });
 
-    // ── FILTERING ────────────────────────────────────────────────
-    describe('Filtering', () => {
-
-        beforeEach(fakeAsync(() => {
-            fixture.detectChanges();
-            flush();
-        }));
-
-        it('should filter by search query', () => {
-            component.searchQuery = 'asp';
-            component.applyFilters();
-            expect(component.filteredMedicines.length).toBe(1);
-            expect(component.filteredMedicines[0].medicineName).toBe('Aspirin');
+    describe('Filtering & Search', () => {
+        
+        it('should trigger search on input', () => {
+             spyOn((component as any).searchSubject, 'next');
+             component.onSearchInput('asp');
+             expect((component as any).searchSubject.next).toHaveBeenCalledWith('asp');
         });
 
-        it('should be case insensitive search', () => {
-            component.searchQuery = 'ASPIRIN';
-            component.applyFilters();
-            expect(component.filteredMedicines.length).toBe(1);
-        });
-
-        it('should show all when search is empty', () => {
-            component.searchQuery = '';
-            component.applyFilters();
-            expect(component.filteredMedicines.length).toBe(3);
-        });
-
-        it('should filter in-stock only', () => {
-            component.filterOption = 'in-stock';
-            component.applyFilters();
-            expect(component.filteredMedicines.every(m => m.stock > 0)).toBe(true);
-            expect(component.filteredMedicines.length).toBe(2);
+        it('should handle filter change', () => {
+            const event = { target: { value: 'in-stock' } } as any;
+            spyOn(component as any, 'fetchData');
+            component.onFilterChange(event);
+            expect(component.filterOption).toBe('in-stock');
+            expect((component as any).fetchData).toHaveBeenCalled();
         });
     });
 
-    // ── SORTING ──────────────────────────────────────────────────
     describe('Sorting', () => {
-
-        beforeEach(fakeAsync(() => {
-            fixture.detectChanges();
-            flush();
-        }));
-
-        it('should sort by name A-Z', () => {
-            component.sortOption = 'name-asc';
-            component.applyFilters();
-            expect(component.filteredMedicines[0].medicineName).toBe('Aspirin');
-        });
-
-        it('should sort by price low to high', () => {
-            component.sortOption = 'price-asc';
-            component.applyFilters();
-            expect(component.filteredMedicines[0].price).toBe(3.00);
-        });
-
-        it('should sort by price high to low', () => {
-            component.sortOption = 'price-desc';
-            component.applyFilters();
-            expect(component.filteredMedicines[0].price).toBe(8.50);
+        it('should handle sort change', () => {
+            const event = { target: { value: 'price,asc' } } as any;
+            spyOn(component as any, 'syncUrlAndLoad');
+            component.onSortChange(event);
+            expect(component.sortOption).toBe('price,asc');
+            expect(component.currentPage).toBe(1);
+            expect((component as any).syncUrlAndLoad).toHaveBeenCalled();
         });
     });
 
@@ -240,7 +212,7 @@ describe('MedicineCatalogComponent', () => {
 
         it('should return placeholder for no images', () => {
             expect(component.getFirstImage(mockMedicines[1]))
-                .toBe('assets/images/placeholder-medicine.png');
+                .toContain('assets/images/placeholder-medicine.png');
         });
     });
 

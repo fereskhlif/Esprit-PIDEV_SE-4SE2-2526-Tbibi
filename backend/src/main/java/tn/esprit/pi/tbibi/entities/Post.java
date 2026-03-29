@@ -9,6 +9,7 @@ import tn.esprit.pi.tbibi.entities.Comment;
 import tn.esprit.pi.tbibi.entities.PostStatus;
 import tn.esprit.pi.tbibi.entities.User;
 
+import org.hibernate.annotations.Formula;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,16 +37,23 @@ public class Post {
     Integer views;
 
     // ⭐ CHANGED: Removed columnDefinition
+    @Builder.Default
     @Column(name = "is_pinned", nullable = false)
     boolean pinned = false;
 
-    // ⭐ CHANGED: Removed columnDefinition
+    @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     boolean deleted = false;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "post_status", length = 20)
     PostStatus postStatus;
+
+    @Formula("(SELECT COUNT(*) FROM votes v WHERE v.post_id = post_id)")
+    Integer voteCount;
+
+    @Formula("(SELECT COUNT(*) FROM comments c WHERE c.post_id = post_id AND c.is_deleted = false)")
+    Integer commentCount;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")

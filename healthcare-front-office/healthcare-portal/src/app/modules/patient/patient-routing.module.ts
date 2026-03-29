@@ -20,6 +20,7 @@ import { PharmacyListComponent } from './pages/pharmacy-list/pharmacy-list.compo
 import { CartPageComponent } from './pages/cart-page/cart-page.component';
 import { CheckoutPageComponent } from './pages/checkout-page/checkout-page.component';
 import { OrderSuccessComponent } from './pages/order-success/order-success.component';
+import { MedicineDetailsComponent } from './pages/medicine-details/medicine-details.component';
 
 const routes: Routes = [
     { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -37,6 +38,7 @@ const routes: Routes = [
     { path: 'checkout', component: CheckoutPageComponent },
     { path: 'order-success/:orderId', component: OrderSuccessComponent },
     { path: 'my-orders', component: MyOrdersComponent },
+    { path: 'medicine/:id', component: MedicineDetailsComponent },
     { path: 'pharmacy-shop', component: PharmacyShopComponent },
     { path: 'pharmacy-shop/product/:id', component: ProductDetailsComponent },
     { path: 'lab-results', component: LabResultsComponent },
