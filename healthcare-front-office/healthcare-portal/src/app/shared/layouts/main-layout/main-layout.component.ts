@@ -140,8 +140,9 @@ export class MainLayoutComponent implements OnInit {
   private patientNav: NavItem[] = [
     { path: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
     { path: 'profile', icon: 'user', label: 'My Profile' },
-    { path: 'records', icon: 'file-text', label: 'Medical Records' },
+    { path: 'medical-records', icon: 'file-text', label: 'Medical Records' },
     { path: 'chat', icon: 'message-square', label: 'AI Health Assistant' },
+    { path: 'book-appointment', icon: 'calendar', label: 'Book Appointment' },
     { path: 'appointments', icon: 'calendar', label: 'Appointments' },
     { path: 'doctor-schedules', icon: 'users', label: 'Doctor Schedules' },
     { path: 'prescriptions', icon: 'pill', label: 'Prescriptions' },
@@ -149,11 +150,15 @@ export class MainLayoutComponent implements OnInit {
     { path: 'lab-results', icon: 'microscope', label: 'Lab Results' },
     { path: 'reminders', icon: 'clock', label: 'Reminders' },
     { path: 'payment', icon: 'credit-card', label: 'Payment' },
-    { path: 'history', icon: 'history', label: 'History' }
+    { path: 'history', icon: 'history', label: 'History' },
+    { path: 'chronic-monitor', icon: 'activity', label: 'Health Monitor' }
   ];
 
   private doctorNav: NavItem[] = [
     { path: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
+    { path: 'all-appointments', icon: 'calendar', label: 'All Appointments' },
+    { path: 'manage-schedules', icon: 'clock', label: 'Manage Schedules' },
+    { path: 'notifications', icon: 'bell', label: 'Notifications' },
     { path: 'profile', icon: 'user', label: 'Professional Profile' },
     { path: 'patient-records', icon: 'users', label: 'Patient Records' },
     { path: 'teleconsultation', icon: 'video', label: 'Teleconsultation' },
@@ -188,16 +193,45 @@ export class MainLayoutComponent implements OnInit {
   private laboratoryNav: NavItem[] = [
     { path: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
     { path: 'profile', icon: 'user', label: 'Professional Profile' },
+    { path: 'prescriptions', icon: 'flask-conical', label: 'Prescriptions reçues' },
     { path: 'samples', icon: 'microscope', label: 'Sample Management' },
     { path: 'results', icon: 'file-text', label: 'Test Results' },
     { path: 'equipment', icon: 'settings', label: 'Equipment Management' },
     { path: 'quality', icon: 'shield-check', label: 'Quality Control' }
   ];
 
+  private adminNav: NavItem[] = [
+    { path: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard Admin' },
+    { path: 'users', icon: 'users', label: 'Utilisateurs' },
+    { path: 'approvals', icon: 'check-circle', label: 'Approbations' },
+    { path: 'settings', icon: 'settings', label: 'Configuration' }
+  ];
+
   constructor(private router: Router, private route: ActivatedRoute) { }
 
   ngOnInit() {
-    this.role = this.route.snapshot.data['role'] || 'patient';
+    const rawRole = this.route.snapshot.data['role'] || 'patient';
+    // Map possible role tokens from routing/auth to the normalized keys used below
+    const roleMap: Record<string, string> = {
+      'PATIENT': 'patient',
+      'DOCTEUR': 'doctor',
+      'DOCTOR': 'doctor',
+      'KINE': 'physiotherapist',
+      'PHYSIOTHERAPIST': 'physiotherapist',
+      'PHARMASIS': 'pharmacist',
+      'PHARMACIST': 'pharmacist',
+      'LABORATORY': 'laboratory',
+      'ADMIN': 'admin'
+    };
+
+    let key = rawRole;
+    if (typeof key === 'string' && key.startsWith('ROLE_')) key = key.replace(/^ROLE_/, '');
+    if (typeof key === 'string') {
+      const up = key.toUpperCase();
+      this.role = roleMap[up] || key.toLowerCase();
+    } else {
+      this.role = key as any;
+    }
     this.setupNavigation();
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
@@ -213,7 +247,8 @@ export class MainLayoutComponent implements OnInit {
       'doctor': 'doctor',
       'physiotherapist': 'physio',
       'pharmacist': 'pharmacist',
-      'laboratory': 'laboratory'
+      'laboratory': 'laboratory',
+      'admin': 'admin'
     };
     this.roleUrlPrefix = rolePrefixMap[this.role] || this.role;
     switch (this.role) {
@@ -236,6 +271,10 @@ export class MainLayoutComponent implements OnInit {
       case 'laboratory':
         this.navItems = this.laboratoryNav;
         this.floatingButton = { path: 'samples', bgClass: 'bg-cyan-600 hover:bg-cyan-700', title: 'Pending Samples', count: 3 };
+        break;
+      case 'admin':
+        this.navItems = this.adminNav;
+        this.floatingButton = { path: 'approvals', bgClass: 'bg-emerald-600 hover:bg-emerald-700', title: 'En Attente', count: 5 };
         break;
     }
   }
