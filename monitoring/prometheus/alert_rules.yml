@@ -1,0 +1,73 @@
+groups:
+  - name: tbibi_alerts
+    rules:
+
+      # Backend DOWN
+      - alert: BackendDown
+        expr: up{job="tbibi-backend"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Tbibi Backend is DOWN"
+          description: "The Spring Boot backend has been unreachable for more than 30 seconds."
+
+      # High CPU usage (Node)
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 85
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 85% for 2 minutes."
+
+      # High Memory usage
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 85%."
+
+      # Low Disk Space
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Available disk space is below 15%."
+
+      # MySQL Down
+      - alert: MySQLDown
+        expr: up{job="mysql-exporter"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "MySQL is DOWN"
+          description: "MySQL exporter is unreachable. Database may be down."
+
+      # High JVM Heap Usage
+      - alert: HighJVMHeapUsage
+        expr: (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100 > 80
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High JVM Heap usage on {{ $labels.instance }}"
+          description: "JVM Heap is above 80% for 3 minutes."
+
+      # High HTTP Error Rate (5xx)
+      - alert: HighHTTPErrorRate
+        expr: rate(http_server_requests_seconds_count{status=~"5.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP 5xx error rate"
+          description: "More than 0.1 req/s are returning 5xx errors."
