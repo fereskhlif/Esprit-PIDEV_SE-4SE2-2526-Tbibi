@@ -115,7 +115,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     { path: 'users', icon: 'users', label: 'Utilisateurs' },
     { path: 'approvals', icon: 'check-circle', label: 'Approbations' },
     { path: 'monitoring', icon: 'activity', label: 'Monitoring' },
-    //{ path: 'settings', icon: 'settings', label: 'Configuration' }
+    { path: 'forum', icon: 'message-square', label: 'Modération Forum' }
   ];
 
   constructor(
